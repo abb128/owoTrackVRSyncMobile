@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">owoTrackVR</string>
+    <string name="remote_service_started" />
+</resources>
