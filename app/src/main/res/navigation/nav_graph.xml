@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    tools:context=".MainActivity"
+    app:startDestination="@id/homeMenu">
+
+    <fragment
+        android:id="@+id/homeMenu"
+        android:name="org.owoTrackVRSync.ui.homeMenu"
+        android:label="fragment_home_menu"
+        tools:layout="@layout/fragment_home_menu" />
+    <fragment
+        android:id="@+id/connectFragment"
+        android:name="org.owoTrackVRSync.ui.ConnectFragment"
+        android:label="fragment_connect"
+        tools:layout="@layout/fragment_connect" />
+    <fragment
+        android:id="@+id/debugLogFragment2"
+        android:name="org.owoTrackVRSync.ui.debugLogFragment"
+        android:label="fragment_debug_log"
+        tools:layout="@layout/fragment_debug_log" />
+</navigation>

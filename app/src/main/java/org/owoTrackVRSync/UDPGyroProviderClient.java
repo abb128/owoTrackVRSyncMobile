@@ -17,8 +17,10 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.PortUnreachableException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
@@ -57,6 +59,10 @@ public class UDPGyroProviderClient {
         port_v = port;
         try {
             ip_addr = InetAddress.getByName(ip);
+        } catch (UnknownHostException e){
+            status.update("Invalid IP address. Please enter a valid IP address.");
+            ip_addr = null;
+            return;
         } catch (Exception e) {
             status.update("Set IP: " + e.toString());
             e.printStackTrace();
@@ -77,7 +83,7 @@ public class UDPGyroProviderClient {
         while(true) {
             tries++;
             if(tries > 12){
-                status.update("Handshake timed out. Ensure that the IP address and port are correct.");
+                status.update("Handshake timed out. Ensure that the IP address and port are correct, that the server is running and that you're connected to the same wifi network.");
                 return false;
             }
             try {
@@ -87,7 +93,7 @@ public class UDPGyroProviderClient {
                     socket.setSoTimeout(250);
                     socket.receive(handshake_receive);
 
-                    if(buffer[0] != 3){
+                    if (buffer[0] != 3) {
                         status.update("Handshake failed, the server did not respond correctly. Ensure everything is up-to-date and that the port is correct.");
                         return false;
                     }
@@ -98,14 +104,14 @@ public class UDPGyroProviderClient {
 
                     result = result.substring(0, result.indexOf(0));
 
-                    if(!result.startsWith("Hey OVR =D")){
+                    if (!result.startsWith("Hey OVR =D")) {
                         status.update("Handshake failed, the server did not respond correctly in the header. Ensure everything is up-to-date and that the port is correct");
                         return false;
                     }
 
                     int version = Integer.valueOf(result.substring(11));
 
-                    if(version != CURRENT_VERSION){
+                    if (version != CURRENT_VERSION) {
                         status.update("Handshake failed, mismatching version");
                         status.update("Server version: " + String.valueOf(version));
                         status.update("Client version: " + String.valueOf(CURRENT_VERSION));
@@ -115,9 +121,12 @@ public class UDPGyroProviderClient {
 
                     did_handshake_succeed = true;
                     return true;
-                } catch(SocketTimeoutException e){
+                } catch (SocketTimeoutException e) {
                     continue;
                 }
+            } catch (PortUnreachableException e){
+                status.update("Port is unreachable. Ensure that you've entered the correct IP and port, that the driver is running and that you're on the same wifi network as the computer.");
+                return false;
             } catch (Exception e) {
                 status.update("Connect Handshake: " + e.toString());
                 e.printStackTrace();
@@ -186,7 +195,6 @@ public class UDPGyroProviderClient {
         @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         public void run() {
-            System.out.println("handle intent");
             byte[] buffer = new byte[64];
             while (true) {
                 try {
@@ -217,7 +225,7 @@ public class UDPGyroProviderClient {
                         v.vibrate(VibrationEffect.createOneShot((long)(duration_s * 1000), (int)(amplitude * 255)));
 
                     } else {
-                        System.out.printf("Unknown message type %d\n", msg_type);
+                        //System.out.printf("Unknown message type %d\n", msg_type);
                     }
                 } catch (Exception e) {
                     status.update("Consume: " + e.toString());

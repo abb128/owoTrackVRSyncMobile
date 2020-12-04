@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="gyroscope">0</integer>
+    <integer name="rotation_vector">1</integer>
+    <integer name="game_rotation_vector">2</integer>
+    <integer name="linear_acceleration">3</integer>
+</resources>

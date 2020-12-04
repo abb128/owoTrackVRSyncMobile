@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.SensorManager;
+import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -35,6 +36,16 @@ public class TrackingService extends Service {
     public void onCreate() {
     }
 
+
+    Runnable on_death = new Runnable() {
+        @Override
+        public void run() {
+            System.out.println("Death!!!");
+            stopSelf();
+            LocalBroadcastManager.getInstance(TrackingService.this).sendBroadcast(new Intent("pls-let-me-die"));
+        }
+    };
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -42,17 +53,17 @@ public class TrackingService extends Service {
         ip_address = data.getString("ipAddrTxt");
         int port_no = data.getInt("port_no");
 
-
+        System.out.println("Start command");
         stat = new AppStatus((Service)this);
         client = new UDPGyroProviderClient(stat, this);
-        listener = new GyroListener((SensorManager)getSystemService(Context.SENSOR_SERVICE), client);
-        Runnable on_death = new Runnable() {
-            @Override
-            public void run() {
-                System.out.println("Death!!!");
-                stopSelf(startId);
-            }
-        };
+        try {
+            listener = new GyroListener((SensorManager)getSystemService(Context.SENSOR_SERVICE), client, stat);
+        } catch (Exception e) {
+            stat.update("on GyroListener: " + e.toString());
+            on_death.run();
+            return START_STICKY;
+        }
+
 
         foregroundstuff();
 
@@ -60,17 +71,19 @@ public class TrackingService extends Service {
             client.setTgt(ip_address, port_no);
             client.connect(on_death);
             if(!client.isConnected()){
-                stopSelf(startId);
+                on_death.run();
             }
         });
         thread.start();
 
         listener.register_listeners();
 
+        String tag = "owoTrackVRSync::BackgroundTrackingSync";
+
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M && Build.MANUFACTURER.equals("Huawei")) { tag = "LocationManagerService"; }
 
         PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
-                "owoTrackVRSync::BackgroundTrackingSync");
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, tag);
         wakeLock.acquire();
 
 
@@ -78,23 +91,56 @@ public class TrackingService extends Service {
         return START_STICKY;
     }
 
+    private final IBinder localBinder = new TrackingBinder();
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+
+        return localBinder;
+    }
+
+    @Override
+    public void onRebind(Intent intent) {
+        super.onRebind(intent);
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        return super.onUnbind(intent);
+    }
+
+    public class TrackingBinder extends Binder {
+        public TrackingService getService() {
+            return TrackingService.this;
+        }
+    }
+
+
+
+    public String getLog(){
+        if(stat == null){
+            return "Service not started";
+        }
+        return stat.statusi;
+    }
+
+    public boolean is_running(){
+        return stat != null;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onDestroy() {
         LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent("cya-ded"));
-        listener.stop();
-        wakeLock.release();
+        if(listener != null) {
+            Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+            v.vibrate(VibrationEffect.createOneShot((long) (1000), (int) (255)));
 
-        unregisterReceiver(broadcastReceiver);
+            listener.stop();
+            wakeLock.release();
 
-        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-        v.vibrate(VibrationEffect.createOneShot((long)(1000), (int)(255)));
+            unregisterReceiver(broadcastReceiver);
 
+        }
 
     }
 
@@ -102,7 +148,7 @@ public class TrackingService extends Service {
         @Override
         public void onReceive(Context context, Intent intent) {
             stat.update("Killed by notification");
-            stopSelf();
+            on_death.run();
         }
     };
 

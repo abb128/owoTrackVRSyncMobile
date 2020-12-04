@@ -13,14 +13,12 @@ public class AppStatus {
 
     private Service main_service;
 
-    private String statusi;
+    public String statusi;
 
-    AppStatus(Activity act, TextView tx){
+    public AppStatus(Activity act, TextView tx){
         main_activity = act;
         statusLbl = tx;
-        statusi = "Debug log will appear here";
         main_service = null;
-        update("Initialized");
     }
 
     AppStatus(Service act){
@@ -34,6 +32,7 @@ public class AppStatus {
     }
 
     public void update(String to){
+        statusi = to + "\n" + statusi;
         if(main_service != null){
             Intent intent = new Intent("info-log");
             intent.putExtra("message", to);
@@ -43,7 +42,6 @@ public class AppStatus {
         if((main_activity == null) || (statusLbl == null)){
             return;
         }
-        statusi = to + "\n" + statusi;
         main_activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {

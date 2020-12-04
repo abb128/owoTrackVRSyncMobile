@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/homeMenu"
+        android:title="Home"
+        android:icon="@drawable/ic_baseline_home_24"
+        />
+
+
+    <item
+        android:id="@+id/connectFragment"
+        android:title="Connect"
+        android:icon="@drawable/ic_baseline_computer_24"
+        />
+
+
+
+    <item
+        android:id="@+id/debugLogFragment2"
+        android:title="Output Log"
+        android:icon="@drawable/ic_baseline_help_outline_24"
+        />
+
+
+
+
+</menu>
+ 

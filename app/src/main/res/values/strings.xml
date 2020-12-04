@@ -1,4 +1,31 @@
 <resources>
     <string name="app_name">owoTrackVR</string>
+    <string name="introdution">
+    </string>
+
+    <string name="sleep_warning">
+        This app may fail to run in the background or with the screen off on some devices.
+        Please visit https://dontkillmyapp.com/ to see solutions for your device.
+    </string>
+
     <string name="remote_service_started" />
+
+
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+
+    <string name="sensors_missing_rotation_vector">
+        Your device lacks a rotation vector sensor.
+        Fallback to game rotation vector will be used, but you will experience yaw drift.
+    </string>
+
+    <string name="sensors_missing_linear_accel">
+        Position prediction will be unavailable on your device due to your device lacking a
+        linear acceleration sensor.
+    </string>
+
+    <string name="sensors_missing_all">
+        ALL REQUIRED SENSORS ARE UNAVAILABLE! Sorry, but this app will not work on your device, as
+        you must at least have a game rotation vector.
+    </string>
 </resources>

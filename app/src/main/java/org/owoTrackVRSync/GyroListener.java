@@ -21,20 +21,43 @@ public class GyroListener implements SensorEventListener {
     private float[] rotation_quat;
     private float[] gyro_vec;
 
-    private boolean use_geomagnetic = true;
+    final static private boolean use_geomagnetic = true;
     private int ROTATION_SENSOR_TYPE;
 
+    final static private String sensor_type = use_geomagnetic ? "Geomagnetic Rotation Sensor": "Game Rotation Sensor";
 
     UDPGyroProviderClient udpClient;
 
-    GyroListener(SensorManager manager, UDPGyroProviderClient udpClient_v) {
+    private void set_sensor_type(boolean geomagnetic){
+        ROTATION_SENSOR_TYPE = use_geomagnetic ? Sensor.TYPE_ROTATION_VECTOR : Sensor.TYPE_GAME_ROTATION_VECTOR;
+    }
+
+    GyroListener(SensorManager manager, UDPGyroProviderClient udpClient_v, AppStatus logger) throws Exception {
         sensorManager = manager;
 
-        ROTATION_SENSOR_TYPE = use_geomagnetic ? Sensor.TYPE_ROTATION_VECTOR : Sensor.TYPE_GAME_ROTATION_VECTOR;
+        set_sensor_type(use_geomagnetic);
+
 
         RotationSensor = sensorManager.getDefaultSensor(ROTATION_SENSOR_TYPE);
+        if(RotationSensor == null){
+            logger.update("Could not find " + sensor_type + ", falling back to alternative.");
+            set_sensor_type(!use_geomagnetic);
+            RotationSensor = sensorManager.getDefaultSensor(ROTATION_SENSOR_TYPE);
+            if(RotationSensor == null){
+                logger.update("Could not find a suitable rotation sensor!!!");
+                throw new Exception("FALLBACK FAILED");
+            }else if(use_geomagnetic){
+                logger.update("NOTE: You may experience yaw drift!!!");
+            }
+        }
+
         AccelSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+        if(AccelSensor == null)
+            logger.update("Linear Acceleration sensor could not be found, this data will be unavailable.");
+
         GyroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        if(GyroSensor == null)
+            logger.update("Gyroscope sensor could not be found, this data will be unavailable.");
 
         rotation_quat = new float[4];
         gyro_vec = new float[3];
@@ -44,9 +67,9 @@ public class GyroListener implements SensorEventListener {
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     public void register_listeners() {
-        sensorManager.registerListener(this,RotationSensor, SensorManager.SENSOR_DELAY_FASTEST, 1_000_000);
-        sensorManager.registerListener(this,AccelSensor, SensorManager.SENSOR_DELAY_FASTEST, 1_000_000);
-        sensorManager.registerListener(this,GyroSensor, SensorManager.SENSOR_DELAY_FASTEST, 1_000_000);
+        sensorManager.registerListener(this,RotationSensor, SensorManager.SENSOR_DELAY_FASTEST);
+        sensorManager.registerListener(this,AccelSensor, SensorManager.SENSOR_DELAY_FASTEST);
+        sensorManager.registerListener(this,GyroSensor, SensorManager.SENSOR_DELAY_FASTEST);
     }
 
     public void stop(){
@@ -59,7 +82,6 @@ public class GyroListener implements SensorEventListener {
             float[] quat = new float[4];
             SensorManager.getQuaternionFromVector(quat, event.values);
             Quaternion quaternion = new Quaternion(quat[1], quat[2], quat[3], quat[0]);
-            //quaternion = Quaternion.create_from_axis_angle(-1, 0, 0, (float) PI/2).mulThis(quaternion);
 
             quat[0] = (float) quaternion.getX();
             quat[1] = (float) quaternion.getY();
