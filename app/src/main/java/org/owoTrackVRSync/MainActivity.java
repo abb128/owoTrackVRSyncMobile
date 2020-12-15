@@ -80,7 +80,6 @@ public class MainActivity extends AppCompatActivity {
     Intent mainIntent;
 
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -109,9 +108,6 @@ public class MainActivity extends AppCompatActivity {
         activityStatus = new AppStatus(this, statusLbl);
 
         mainIntent = null;
-
-        //LocalBroadcastManager.getInstance(this).registerReceiver(logReceiver, new IntentFilter("info-log"));
-        //LocalBroadcastManager.getInstance(this).registerReceiver(logReceiver, new IntentFilter("cya-ded"));
     }
 
     @Override

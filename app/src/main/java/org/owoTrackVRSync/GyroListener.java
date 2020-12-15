@@ -10,6 +10,8 @@ import androidx.annotation.RequiresApi;
 
 import org.owoTrackVRSync.math.Quaternion;
 
+import java.util.List;
+
 public class GyroListener implements SensorEventListener {
     private SensorManager sensorManager;
 
@@ -37,7 +39,6 @@ public class GyroListener implements SensorEventListener {
 
         set_sensor_type(use_geomagnetic);
 
-
         RotationSensor = sensorManager.getDefaultSensor(ROTATION_SENSOR_TYPE);
         if(RotationSensor == null){
             logger.update("Could not find " + sensor_type + ", falling back to alternative.");
@@ -45,7 +46,7 @@ public class GyroListener implements SensorEventListener {
             RotationSensor = sensorManager.getDefaultSensor(ROTATION_SENSOR_TYPE);
             if(RotationSensor == null){
                 logger.update("Could not find a suitable rotation sensor!!!");
-                throw new Exception("FALLBACK FAILED");
+                throw new Exception("Failed to find sensors, see log for more details");
             }else if(use_geomagnetic){
                 logger.update("NOTE: You may experience yaw drift!!!");
             }
@@ -65,7 +66,6 @@ public class GyroListener implements SensorEventListener {
         udpClient = udpClient_v;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     public void register_listeners() {
         sensorManager.registerListener(this,RotationSensor, SensorManager.SENSOR_DELAY_FASTEST);
         sensorManager.registerListener(this,AccelSensor, SensorManager.SENSOR_DELAY_FASTEST);

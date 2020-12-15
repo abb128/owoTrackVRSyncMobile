@@ -192,7 +192,6 @@ public class UDPGyroProviderClient {
 
 
     Runnable listen_task = new Runnable(){
-        @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         public void run() {
             byte[] buffer = new byte[64];
@@ -222,8 +221,11 @@ public class UDPGyroProviderClient {
                         float amplitude = buff.getFloat();
 
                         Vibrator v = (Vibrator) service.getSystemService(Context.VIBRATOR_SERVICE);
-                        v.vibrate(VibrationEffect.createOneShot((long)(duration_s * 1000), (int)(amplitude * 255)));
-
+                        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            v.vibrate(VibrationEffect.createOneShot((long) (duration_s * 1000), (int) (amplitude * 255)));
+                        }else{
+                            v.vibrate((long) (duration_s * 1000));
+                        }
                     } else {
                         //System.out.printf("Unknown message type %d\n", msg_type);
                     }

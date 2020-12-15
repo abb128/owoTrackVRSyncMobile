@@ -50,7 +50,6 @@ public class SensorInfoFragment extends Fragment {
 
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {

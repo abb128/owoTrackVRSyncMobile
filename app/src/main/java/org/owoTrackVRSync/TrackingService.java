@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.SensorManager;
+import android.media.AudioAttributes;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
@@ -46,7 +47,6 @@ public class TrackingService extends Service {
         }
     };
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Bundle data = intent.getExtras();
@@ -127,14 +127,16 @@ public class TrackingService extends Service {
         return stat != null;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onDestroy() {
         LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent("cya-ded"));
         if(listener != null) {
             Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-            v.vibrate(VibrationEffect.createOneShot((long) (1000), (int) (255)));
-
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                v.vibrate(VibrationEffect.createOneShot((long) (1000), (int) (255)));
+            }else {
+                v.vibrate(1000);
+            }
             listener.stop();
             wakeLock.release();
 
@@ -153,10 +155,12 @@ public class TrackingService extends Service {
     };
 
     // stupid foreground stuff
-    @RequiresApi(api = Build.VERSION_CODES.O)
     private void foregroundstuff(){
         NotificationManager nm = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-        nm.createNotificationChannel(new NotificationChannel("NOTIFICATION_CHANNEL_ID", "namee", NotificationManager.IMPORTANCE_DEFAULT));
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            nm.createNotificationChannel(new NotificationChannel("NOTIFICATION_CHANNEL_ID", "namee", NotificationManager.IMPORTANCE_DEFAULT));
+        }
 
         registerReceiver(broadcastReceiver, new IntentFilter("kill-ze-service"));
 
