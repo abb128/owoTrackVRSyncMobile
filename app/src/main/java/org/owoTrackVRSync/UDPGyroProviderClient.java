@@ -37,7 +37,7 @@ public class UDPGyroProviderClient {
 
     Service service;
 
-    final int CURRENT_VERSION = 5;
+    public final static int CURRENT_VERSION = 5;
 
     long last_heartbeat_time = 0;
 
@@ -71,68 +71,15 @@ public class UDPGyroProviderClient {
         }
     }
 
-    public boolean try_handshake(){
-        byte[] buffer = new byte[64];
-        DatagramPacket handshake_receive = new DatagramPacket(buffer, 64);
-
-        ByteBuffer handshake_buff = ByteBuffer.allocate(12);
-        handshake_buff.putInt(3);
-        handshake_buff.putLong(0);
-
-        int tries = 0;
-        while(true) {
-            tries++;
-            if(tries > 12){
-                status.update("Handshake timed out. Ensure that the IP address and port are correct, that the server is running and that you're connected to the same wifi network.");
-                return false;
-            }
-            try {
-                socket.send(new DatagramPacket(handshake_buff.array(), 12));
-
-                try {
-                    socket.setSoTimeout(250);
-                    socket.receive(handshake_receive);
-
-                    if (buffer[0] != 3) {
-                        status.update("Handshake failed, the server did not respond correctly. Ensure everything is up-to-date and that the port is correct.");
-                        return false;
-                    }
-
-                    String result = new String(
-                            Arrays.copyOfRange(buffer, 1, 64),
-                            "ASCII");
-
-                    result = result.substring(0, result.indexOf(0));
-
-                    if (!result.startsWith("Hey OVR =D")) {
-                        status.update("Handshake failed, the server did not respond correctly in the header. Ensure everything is up-to-date and that the port is correct");
-                        return false;
-                    }
-
-                    int version = Integer.valueOf(result.substring(11));
-
-                    if (version != CURRENT_VERSION) {
-                        status.update("Handshake failed, mismatching version");
-                        status.update("Server version: " + String.valueOf(version));
-                        status.update("Client version: " + String.valueOf(CURRENT_VERSION));
-                        status.update("Please make sure everything is up to date.");
-                        return false;
-                    }
-
-                    did_handshake_succeed = true;
-                    return true;
-                } catch (SocketTimeoutException e) {
-                    continue;
-                }
-            } catch (PortUnreachableException e){
-                status.update("Port is unreachable. Ensure that you've entered the correct IP and port, that the driver is running and that you're on the same wifi network as the computer.");
-                return false;
-            } catch (Exception e) {
-                status.update("Connect Handshake: " + e.toString());
-                e.printStackTrace();
-                return false;
-            }
+    public boolean try_handshake() {
+        try {
+            did_handshake_succeed = Handshaker.try_handshake(socket);
+        } catch (Exception e) {
+            did_handshake_succeed = false;
+            status.update(e.getMessage());
         }
+
+        return did_handshake_succeed;
     }
 
     private boolean isConnected = false;

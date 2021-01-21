@@ -42,8 +42,12 @@ public class ConnectFragment extends GenericBindingFragment {
 
     final static String CONN_DATA = "CONNECTION_DATA_PREF";
 
-    private SharedPreferences get_prefs(){
-        return getContext().getSharedPreferences(CONN_DATA, Context.MODE_PRIVATE);
+    public static SharedPreferences get_prefs(Context c){
+        return c.getSharedPreferences(CONN_DATA, Context.MODE_PRIVATE);
+    }
+
+    public SharedPreferences get_prefs(){
+        return get_prefs(getContext());
     }
 
 

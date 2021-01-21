@@ -14,6 +14,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.os.Build;
@@ -25,6 +26,7 @@ import android.widget.TextView;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationView;
 
+import org.owoTrackVRSync.ui.ConnectFragment;
 import org.owoTrackVRSync.ui.homeMenu;
 
 public class MainActivity extends AppCompatActivity {
@@ -79,6 +81,20 @@ public class MainActivity extends AppCompatActivity {
 
     Intent mainIntent;
 
+    public NavController contr;
+
+    private void runDiscovery(){
+        AutoDiscoverer disc = new AutoDiscoverer(this);
+        Thread thrd = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                disc.try_discover();
+            }
+
+        });
+        thrd.start();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,26 +104,15 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        NavController contr = Navigation.findNavController(this, R.id.fragment);
+        contr = Navigation.findNavController(this, R.id.fragment);
 
         BottomNavigationView nav = findViewById(R.id.nav_view);
 
         NavigationUI.setupWithNavController(nav, contr);
 
-        if(true) {
-            return;
+        if(!TrackingService.isInstanceCreated()){
+            runDiscovery();
         }
-
-        statusLbl = (TextView)findViewById(R.id.statusText);
-        connectButton = (Button)findViewById(R.id.connectButton);
-        ipAddrTxt = (EditText)findViewById(R.id.editIP);
-        portTxt = (EditText)findViewById(R.id.editPort);
-
-
-
-        activityStatus = new AppStatus(this, statusLbl);
-
-        mainIntent = null;
     }
 
     @Override

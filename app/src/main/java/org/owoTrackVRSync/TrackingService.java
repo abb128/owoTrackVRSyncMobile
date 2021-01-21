@@ -33,8 +33,15 @@ public class TrackingService extends Service {
     private String ip_address;
     private AppStatus stat;
 
+
+    private static TrackingService instance = null;
+    public static boolean isInstanceCreated(){
+        return instance != null;
+    }
+
     @Override
     public void onCreate() {
+        instance = this;
     }
 
 
@@ -129,6 +136,7 @@ public class TrackingService extends Service {
 
     @Override
     public void onDestroy() {
+        instance = null;
         LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent("cya-ded"));
         if(listener != null) {
             Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
