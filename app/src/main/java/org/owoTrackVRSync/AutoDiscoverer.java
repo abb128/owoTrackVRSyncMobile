@@ -103,7 +103,7 @@ public class AutoDiscoverer {
 
 
                 for (String line : response.split("\n")) {
-                    int port = Integer.valueOf(line.split(":")[0]);
+                    int port = Integer.parseInt(line.split(":")[0]);
                     String name = line.split(":")[1];
 
                     if (port > 0) {
@@ -112,9 +112,7 @@ public class AutoDiscoverer {
                     }
                 }
             }
-        } catch (SocketException | UnknownHostException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
