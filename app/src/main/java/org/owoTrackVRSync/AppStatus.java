@@ -13,7 +13,7 @@ public class AppStatus {
 
     private Service main_service;
 
-    public String statusi;
+    public String statusi = "";
 
     public AppStatus(Activity act, TextView tx){
         main_activity = act;
@@ -42,11 +42,8 @@ public class AppStatus {
         if((main_activity == null) || (statusLbl == null)){
             return;
         }
-        main_activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                statusLbl.setText(statusi);
-            }
+        main_activity.runOnUiThread(() -> {
+            statusLbl.setText(statusi);
         });
 
     }

@@ -36,8 +36,12 @@ public class UDPGyroProviderClient {
     private AppStatus status;
 
     Service service;
+    GyroListener listener;
 
     public final static int CURRENT_VERSION = 5;
+
+    long last_packetsend_time = 0;
+    long num_packetsend = 0;
 
     long last_heartbeat_time = 0;
 
@@ -111,11 +115,20 @@ public class UDPGyroProviderClient {
         isConnected = socket.isConnected();
         if(isConnected){
             last_heartbeat_time = System.currentTimeMillis();
+            last_packetsend_time = last_heartbeat_time;
             status.update("Connection succeeded!");
             Thread task = new Thread(listen_task);
             task.start();
         }
+
         return isConnected;
+    }
+
+
+    private void killConnection(){
+        on_connection_death.run();
+        isConnected = false;
+        did_handshake_succeed = false;
     }
 
     public boolean isConnected(){
@@ -127,10 +140,8 @@ public class UDPGyroProviderClient {
         long time_diff = time - last_heartbeat_time;
 
         if(time_diff > (10*1000)){
-            status.update("Connection with the server has been lost!!!");
-            on_connection_death.run();
-            isConnected = false;
-            did_handshake_succeed = false;
+            status.update("Connection with the server has been lost!");
+            killConnection();
             return false;
         }
 
@@ -138,11 +149,15 @@ public class UDPGyroProviderClient {
     }
 
 
-    Runnable listen_task = new Runnable(){
-        @Override
-        public void run() {
+    boolean magMsgWaiting = false;
+    boolean magMsgContents = false;
+    Runnable listen_task = () -> {
             byte[] buffer = new byte[64];
             while (true) {
+                if(magMsgWaiting){
+                    provide_mag_enabled(magMsgContents);
+                    magMsgWaiting = false;
+                }
                 try {
                     socket.setSoTimeout(1000);
                     DatagramPacket p = new DatagramPacket(buffer, 64);
@@ -161,18 +176,32 @@ public class UDPGyroProviderClient {
 
                     if (msg_type == 1) {
                         // just heartbeat
-                    }else if(msg_type == 2){
+                        // check if our sensors are working
+                        long lastSent = (last_packetsend_time - last_heartbeat_time);
+                        if( (lastSent > (3_000)) && (num_packetsend < 32) ){
+                            status.update(String.format("Android OS is not providing rotational data. " +
+                                    "It has been %d ms with only %d rotations provided. " +
+                                    "If you're using a custom ROM it's likely that your ROM doesn't implement registerListener Sensor.TYPE_ROTATION_VECTOR",
+                                    (int)lastSent, (int)num_packetsend));
+                            killConnection();
+                            return;
+                        }
+                    }else if(msg_type == 2) {
                         // vibrate
                         float duration_s = buff.getFloat();
                         float frequency = buff.getFloat();
                         float amplitude = buff.getFloat();
 
                         Vibrator v = (Vibrator) service.getSystemService(Context.VIBRATOR_SERVICE);
-                        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                             v.vibrate(VibrationEffect.createOneShot((long) (duration_s * 1000), (int) (amplitude * 255)));
-                        }else{
+                        } else {
                             v.vibrate((long) (duration_s * 1000));
                         }
+                    }else if(msg_type == 7){
+                        // change geomagnetic type
+                        char c = buff.getChar();
+                        if(listener != null) listener.change_realtime_geomagnetic(c == 'y');
                     } else {
                         //System.out.printf("Unknown message type %d\n", msg_type);
                     }
@@ -182,16 +211,28 @@ public class UDPGyroProviderClient {
                     continue;
                 }
             }
-        }
     };
 
     private long packet_id = 0;
+
+    private boolean sendPacket(ByteBuffer buff, int len){
+        DatagramPacket packet = new DatagramPacket(buff.array(), len);
+        try {
+            socket.send(packet);
+        } catch (Exception e) {
+            status.update("Packet Send: " + e.toString());
+            e.printStackTrace();
+            did_handshake_succeed = false;
+            isConnected = false;
+            return false;
+        }
+        return true;
+    }
 
     private void provide_floats(float[] floats, int len, int msg_type) {
         if (!isConnected()) {
             return;
         }
-
 
         int bytes = 12 + len * 4; // 12b header (int + long)  + floats (4b each)
 
@@ -203,18 +244,37 @@ public class UDPGyroProviderClient {
             buff.putFloat(floats[i]);
         }
 
-        DatagramPacket packet = new DatagramPacket(buff.array(), bytes);
-        try {
-            socket.send(packet);
-        } catch (Exception e) {
-            status.update("Packet Send: " + e.toString());
-            e.printStackTrace();
-            did_handshake_succeed = false;
-            isConnected = false;
-            return;
-        }
+        if(!sendPacket(buff, bytes)) return;
+
         packet_id++;
 
+    }
+
+
+    public void provide_mag_enabled(boolean enabled){
+        int len = 12 + 2;
+        if(!isConnected()){
+            magMsgWaiting = true;
+            magMsgContents = enabled;
+            return;
+        }
+
+        ByteBuffer buff = ByteBuffer.allocate(len);
+        buff.putInt(5);
+        buff.putLong(packet_id++);
+        buff.putChar(enabled ? 'y' : 'n');
+
+        sendPacket(buff, len);
+
+    }
+
+    public void recenter_yaw(){
+        int len = 12 + 1;
+        ByteBuffer buff = ByteBuffer.allocate(len);
+        buff.putInt(6);
+        buff.putLong(packet_id++);
+
+        sendPacket(buff, len);
     }
 
     public void provide_gyro(float[] gyro_v){
@@ -223,10 +283,15 @@ public class UDPGyroProviderClient {
 
     public void provide_rot(float[] rot_q){
         provide_floats(rot_q,  4, 1);
+        num_packetsend++;
+        last_packetsend_time = System.currentTimeMillis();
     }
 
     public void provide_accel(float[] accel){
         provide_floats(accel,  3, 4);
     }
 
+    public void set_listener(GyroListener gyroListener) {
+        listener = gyroListener;
+    }
 }

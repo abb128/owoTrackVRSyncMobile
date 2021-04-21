@@ -21,6 +21,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -66,9 +67,14 @@ public class ConnectFragment extends GenericBindingFragment {
         ((TextView)curr_view.findViewById(R.id.statusText)).setText(to.split("\n")[0]);
     }
 
+    private boolean should_disconnect = false;
+
     @Override
     protected void onConnectionStatus(boolean to) {
-        connect_button.setEnabled(!to);
+        //connect_button.setEnabled(!to);
+        should_disconnect = to;
+        connect_button.setText(should_disconnect ? "Disconnect" : "Connect");
+        magBox.setEnabled(!to);
     }
 
     @Override
@@ -80,6 +86,7 @@ public class ConnectFragment extends GenericBindingFragment {
     Button connect_button = null;
     EditText ipAddrTxt = null;
     EditText portTxt = null;
+    CheckBox magBox = null;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -89,13 +96,17 @@ public class ConnectFragment extends GenericBindingFragment {
         connect_button = curr_view.findViewById(R.id.connectButton);
         ipAddrTxt = curr_view.findViewById(R.id.editIP);
         portTxt = curr_view.findViewById(R.id.editPort);
+        magBox = curr_view.findViewById(R.id.magnetCheckbox);
 
         SharedPreferences prefs = get_prefs();
 
         ipAddrTxt.setText(prefs.getString("ip_address", "192.168.24.150"));
         portTxt.setText(String.valueOf(prefs.getInt("port", 6969)));
+        magBox.setChecked(prefs.getBoolean("magnetometer", true));
 
         connect_button.setOnClickListener(v -> onConnect());
+
+        onConnectionStatus(TrackingService.isInstanceCreated());
 
         return curr_view;
     }
@@ -114,20 +125,25 @@ public class ConnectFragment extends GenericBindingFragment {
         return Integer.valueOf(filtered_port);
     }
 
+    private boolean get_mag(){
+        return magBox.isChecked();
+    }
 
     private void onConnect(){
         if((service_v != null) && (service_v.is_running())){
-            onSetStatus("Service is already running!!");
+            onSetStatus("Killing service...");
+            Intent intent = new Intent("kill-ze-service");
+            getContext().sendBroadcast(intent);
             return;
         }
 
-        onConnectionStatus(false);
 
-
+        onConnectionStatus(true);
 
         Intent mainIntent = new Intent(getContext(), TrackingService.class);
         mainIntent.putExtra("ipAddrTxt", get_ip_address());
         mainIntent.putExtra("port_no", get_port());
+        mainIntent.putExtra("magnetometer", get_mag());
 
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
             getContext().startForegroundService(mainIntent);
@@ -142,6 +158,7 @@ public class ConnectFragment extends GenericBindingFragment {
 
         editor.putString("ip_address", get_ip_address());
         editor.putInt("port", get_port());
+        editor.putBoolean("magnetometer", get_mag());
 
         editor.apply();
     }

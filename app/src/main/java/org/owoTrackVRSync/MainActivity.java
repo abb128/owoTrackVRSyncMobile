@@ -50,7 +50,13 @@ public class MainActivity extends AppCompatActivity {
 
         sensor_exist[0] = (man.getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null);
         sensor_exist[1] = (man.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR) != null);
-        sensor_exist[2] = (man.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR) != null);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            sensor_exist[2] = (man.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR) != null);
+        }else{
+            sensor_exist[2] = false;
+        }
+
         sensor_exist[3] = (man.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION) != null);
 
         missingSensorMessage = "";
@@ -69,30 +75,11 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-
-    TextView statusLbl = null;
-    Button connectButton = null;
-    EditText ipAddrTxt = null;
-    EditText portTxt = null;
-
-    UDPGyroProviderClient client;
-
-    AppStatus activityStatus;
-
-    Intent mainIntent;
-
     public NavController contr;
 
     private void runDiscovery(){
         AutoDiscoverer disc = new AutoDiscoverer(this);
-        Thread thrd = new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                disc.try_discover();
-            }
-
-        });
+        Thread thrd = new Thread(disc::try_discover);
         thrd.start();
     }
 
@@ -110,9 +97,15 @@ public class MainActivity extends AppCompatActivity {
 
         NavigationUI.setupWithNavController(nav, contr);
 
-        if(!TrackingService.isInstanceCreated()){
-            runDiscovery();
-        }
+        Thread auto_discover = new Thread(() -> {
+            while((!TrackingService.isInstanceCreated()) && (!AutoDiscoverer.dialogShown)){
+                runDiscovery();
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) { }
+            }
+        });
+        auto_discover.start();
     }
 
     @Override
@@ -122,22 +115,11 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
-        //LocalBroadcastManager.getInstance(this).unregisterReceiver(logReceiver);
         super.onPause();
     }
 
     @Override
     protected void onResume() {
-        //LocalBroadcastManager.getInstance(this).registerReceiver(logReceiver, new IntentFilter("info-log"));
-        //LocalBroadcastManager.getInstance(this).registerReceiver(logReceiver, new IntentFilter("cya-ded"));
         super.onResume();
     }
-
-    private void onConnectionReturned(){
-        runOnUiThread(() -> {
-            connectButton.setEnabled(true);
-        });
-    }
-
-
 }

@@ -17,7 +17,7 @@
         android:layout_height="wrap_content"
         android:ems="10"
         android:hint="IP address"
-        android:inputType="textPersonName"
+        android:inputType="textNoSuggestions"
         android:text="192.168.24.150" />
 
     <EditText
@@ -28,6 +28,12 @@
         android:hint="Port"
         android:inputType="number"
         android:text="6969" />
+
+    <CheckBox
+        android:id="@+id/magnetCheckbox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Use Magnetometer" />
 
     <Button
         android:id="@+id/connectButton"

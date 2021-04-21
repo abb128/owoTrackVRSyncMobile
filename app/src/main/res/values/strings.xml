@@ -20,8 +20,7 @@
     </string>
 
     <string name="sensors_missing_linear_accel">
-        Position prediction will be unavailable on your device due to your device lacking a
-        linear acceleration sensor.
+        Linear accelerometer currently isnt necessary.
     </string>
 
     <string name="sensors_missing_all">

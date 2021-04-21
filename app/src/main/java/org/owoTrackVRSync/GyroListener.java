@@ -5,6 +5,8 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
+import android.os.Handler;
+import android.os.HandlerThread;
 
 import androidx.annotation.RequiresApi;
 
@@ -23,21 +25,30 @@ public class GyroListener implements SensorEventListener {
     private float[] rotation_quat;
     private float[] gyro_vec;
 
-    final static private boolean use_geomagnetic = true;
+
+
+    private boolean use_geomagnetic = true;
+    private boolean using_geomagnetic = false;
+
     private int ROTATION_SENSOR_TYPE;
 
-    final static private String sensor_type = use_geomagnetic ? "Geomagnetic Rotation Sensor": "Game Rotation Sensor";
+    private String sensor_type = "";
 
     UDPGyroProviderClient udpClient;
 
     private void set_sensor_type(boolean geomagnetic){
+        sensor_type = use_geomagnetic ? "Magnetometer, Gyroscope, Accelerometer": "Gyroscope, Accelerometer (no magnetometer)";
         ROTATION_SENSOR_TYPE = use_geomagnetic ? Sensor.TYPE_ROTATION_VECTOR : Sensor.TYPE_GAME_ROTATION_VECTOR;
+        using_geomagnetic = geomagnetic;
     }
 
-    GyroListener(SensorManager manager, UDPGyroProviderClient udpClient_v, AppStatus logger) throws Exception {
+    GyroListener(SensorManager manager, UDPGyroProviderClient udpClient_v, AppStatus logger, boolean mag) throws Exception {
         sensorManager = manager;
 
+        use_geomagnetic = mag;
+
         set_sensor_type(use_geomagnetic);
+        logger.update("Using " + sensor_type);
 
         RotationSensor = sensorManager.getDefaultSensor(ROTATION_SENSOR_TYPE);
         if(RotationSensor == null){
@@ -45,11 +56,13 @@ public class GyroListener implements SensorEventListener {
             set_sensor_type(!use_geomagnetic);
             RotationSensor = sensorManager.getDefaultSensor(ROTATION_SENSOR_TYPE);
             if(RotationSensor == null){
-                logger.update("Could not find a suitable rotation sensor!!!");
+                logger.update("Could not find any suitable rotation sensor!");
                 throw new Exception("Failed to find sensors, see log for more details");
-            }else if(use_geomagnetic){
-                logger.update("NOTE: You may experience yaw drift!!!");
             }
+        }
+
+        if(!using_geomagnetic){
+            logger.update("You may experience yaw drift.");
         }
 
         AccelSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
@@ -64,12 +77,23 @@ public class GyroListener implements SensorEventListener {
         gyro_vec = new float[3];
 
         udpClient = udpClient_v;
+        udpClient.provide_mag_enabled(using_geomagnetic);
+        udpClient.set_listener(this);
     }
 
+    private Handler mHandler;
     public void register_listeners() {
-        sensorManager.registerListener(this,RotationSensor, SensorManager.SENSOR_DELAY_FASTEST);
-        sensorManager.registerListener(this,AccelSensor, SensorManager.SENSOR_DELAY_FASTEST);
-        sensorManager.registerListener(this,GyroSensor, SensorManager.SENSOR_DELAY_FASTEST);
+        mHandler = new Handler();
+        sensorManager.registerListener(this,RotationSensor, SensorManager.SENSOR_DELAY_FASTEST, mHandler);
+        sensorManager.registerListener(this,AccelSensor, SensorManager.SENSOR_DELAY_FASTEST, mHandler);
+        sensorManager.registerListener(this,GyroSensor, SensorManager.SENSOR_DELAY_FASTEST, mHandler);
+    }
+
+    public void change_realtime_geomagnetic(boolean geomagnetic){
+        sensorManager.unregisterListener(this);
+        set_sensor_type(geomagnetic);
+        register_listeners();
+        udpClient.provide_mag_enabled(geomagnetic);
     }
 
     public void stop(){

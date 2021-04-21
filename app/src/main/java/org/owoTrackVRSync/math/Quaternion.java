@@ -219,4 +219,8 @@ public final class Quaternion {
         return quat;
     }
 
+
+    public float yaw(){
+        return (float) Math.atan2(2.0f * (w * z + x * y), w * w + x * x - y * y - z * z);
+    }
 }

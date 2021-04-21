@@ -33,6 +33,7 @@ public abstract class GenericBindingFragment extends Fragment {
         public void onReceive(Context context, Intent intent) {
             switch(intent.getAction()) {
                 case "info-log":
+                    onConnectionStatus(true);
                     String data = intent.getStringExtra("message");
                     onSetStatus(data);
                     status_string = data + "\n" + status_string;

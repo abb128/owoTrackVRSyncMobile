@@ -45,13 +45,10 @@ public class TrackingService extends Service {
     }
 
 
-    Runnable on_death = new Runnable() {
-        @Override
-        public void run() {
-            System.out.println("Death!!!");
+    Runnable on_death = () -> {
+            System.out.println("Death!");
             stopSelf();
             LocalBroadcastManager.getInstance(TrackingService.this).sendBroadcast(new Intent("pls-let-me-die"));
-        }
     };
 
     @Override
@@ -59,12 +56,15 @@ public class TrackingService extends Service {
         Bundle data = intent.getExtras();
         ip_address = data.getString("ipAddrTxt");
         int port_no = data.getInt("port_no");
+        boolean mag = data.getBoolean("magnetometer", true);
 
         System.out.println("Start command");
+        foregroundstuff();
+
         stat = new AppStatus((Service)this);
         client = new UDPGyroProviderClient(stat, this);
         try {
-            listener = new GyroListener((SensorManager)getSystemService(Context.SENSOR_SERVICE), client, stat);
+            listener = new GyroListener((SensorManager)getSystemService(Context.SENSOR_SERVICE), client, stat, mag);
         } catch (Exception e) {
             stat.update("on GyroListener: " + e.toString());
             on_death.run();
@@ -72,7 +72,6 @@ public class TrackingService extends Service {
         }
 
 
-        foregroundstuff();
 
         Thread thread = new Thread(() -> {
             client.setTgt(ip_address, port_no);
@@ -94,6 +93,7 @@ public class TrackingService extends Service {
         wakeLock.acquire();
 
 
+        register_recenter_yaw();
 
         return START_STICKY;
     }
@@ -141,15 +141,15 @@ public class TrackingService extends Service {
         if(listener != null) {
             Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                v.vibrate(VibrationEffect.createOneShot((long) (1000), (int) (255)));
+                v.vibrate(VibrationEffect.createOneShot((long) (200), (int) (255)));
             }else {
-                v.vibrate(1000);
+                v.vibrate(200);
             }
             listener.stop();
             wakeLock.release();
 
             unregisterReceiver(broadcastReceiver);
-
+            unregisterReceiver(recenterReceiver);
         }
 
     }
@@ -157,10 +157,30 @@ public class TrackingService extends Service {
     BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            stat.update("Killed by notification");
+            stat.update("Killed.");
             on_death.run();
         }
     };
+
+    //private long last_screen_time = 0;
+    BroadcastReceiver recenterReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            //long currTime = System.currentTimeMillis();
+            //if((currTime - last_screen_time) < 1000){
+                client.recenter_yaw();
+            //}
+            //last_screen_time = currTime;
+        }
+    };
+
+
+    private void register_recenter_yaw(){
+        IntentFilter screenStateFilter = new IntentFilter();
+        screenStateFilter.addAction(Intent.ACTION_SCREEN_ON);
+        //screenStateFilter.addAction(Intent.ACTION_SCREEN_OFF);
+        registerReceiver(recenterReceiver, screenStateFilter);
+    }
 
     // stupid foreground stuff
     private void foregroundstuff(){
@@ -184,5 +204,7 @@ public class TrackingService extends Service {
                 .setOngoing(true).build();
 
         startForeground(1001, notification);
+
+        System.out.println("Foreground stuff done\n");
     }
 }

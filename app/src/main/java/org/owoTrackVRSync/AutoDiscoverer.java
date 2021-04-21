@@ -36,11 +36,6 @@ public class AutoDiscoverer {
         mainIntent.putExtra("ipAddrTxt", addr.getHostAddress());
         mainIntent.putExtra("port_no", port);
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-            act.startForegroundService(mainIntent);
-        }else{
-            act.startService(mainIntent);
-        }
 
         // save it for future :)
         SharedPreferences prefs = ConnectFragment.get_prefs(act);
@@ -49,18 +44,27 @@ public class AutoDiscoverer {
         editor.putString("ip_address", addr.getHostAddress());
         editor.putInt("port", port);
 
+        boolean mag = prefs.getBoolean("magnetometer", true);
+        mainIntent.putExtra("magnetometer", mag);
+
         editor.apply();
 
+        // start service
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            act.startForegroundService(mainIntent);
+        }else{
+            act.startService(mainIntent);
+        }
 
         // go
         act.contr.navigate(R.id.connectFragment);
     }
 
-    private void alert(InetAddress addr, int port, String name){
-        act.runOnUiThread(new Runnable() {
+    public static boolean dialogShown = false;
 
-            @Override
-            public void run() {
+    private void alert(InetAddress addr, int port, String name){
+        dialogShown = true;
+        act.runOnUiThread(() -> {
                 AlertDialog.Builder alert = new AlertDialog.Builder(act);
                 alert.setTitle("Automatic Discovery");
                 alert.setMessage("Connect to " + addr.getHostAddress() + ":" + String.valueOf(port) + " (" + name + ")?");
@@ -74,11 +78,10 @@ public class AutoDiscoverer {
                 alert.setNegativeButton("No",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
-                            }
-                        });
+                        }
+                });
 
                 alert.show();
-            }
         });
     }
 

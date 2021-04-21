@@ -20,7 +20,7 @@ public class Handshaker {
         while(true) {
             tries++;
             if(tries > 12){
-                throw new Exception("Handshake timed out. Ensure that the IP address and port are correct, that the server is running and that you're connected to the same wifi network.");
+                throw new Exception("Handshake timed out. Ensure IP and port are correct, that the server is running and not blocked by Windows Firewall or router, and that you're connected to the same network.");
             }
             try {
                 socket.send(new DatagramPacket(handshake_buff.array(), 12));
