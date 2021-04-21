@@ -43,7 +43,12 @@ public class Handshaker {
                         throw new Exception("Handshake failed, the server did not respond correctly in the header. Ensure everything is up-to-date and that the port is correct");
                     }
 
-                    int version = Integer.valueOf(result.substring(11));
+                    int version = -1;
+                    try{
+                        version = Integer.parseInt(result.substring(11));
+                    }catch(NumberFormatException e){
+                        throw new Exception("Handshake failed, server did not send an int");
+                    }
 
                     if (version != UDPGyroProviderClient.CURRENT_VERSION) {
                         throw new Exception("Handshake failed, mismatching version"

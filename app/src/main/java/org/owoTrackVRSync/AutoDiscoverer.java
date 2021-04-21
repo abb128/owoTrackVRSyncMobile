@@ -106,13 +106,15 @@ public class AutoDiscoverer {
 
 
                 for (String line : response.split("\n")) {
-                    int port = Integer.parseInt(line.split(":")[0]);
-                    String name = line.split(":")[1];
+                    try {
+                        int port = Integer.parseInt(line.split(":")[0]);
+                        String name = line.split(":")[1];
 
-                    if (port > 0) {
-                        alert(pkt.getAddress(), port, name);
-                        break;
-                    }
+                        if (port > 0) {
+                            alert(pkt.getAddress(), port, name);
+                            break;
+                        }
+                    }catch(NumberFormatException ignored){}
                 }
             }
         } catch (Exception e) {

@@ -53,6 +53,10 @@ public class TrackingService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if((intent == null) || (intent.getExtras() == null)){
+            foregroundstuff();
+            return START_STICKY;
+        }
         Bundle data = intent.getExtras();
         ip_address = data.getString("ipAddrTxt");
         int port_no = data.getInt("port_no");

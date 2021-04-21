@@ -73,7 +73,7 @@ public class SensorInfoFragment extends Fragment {
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.SensorInfoFragment);
 
         sensorName = String.valueOf(a.getText(R.styleable.SensorInfoFragment_sensorName));
-        sensorID = a.getInt(R.styleable.SensorInfoFragment_sensorID, -1);
+        sensorID = a.getInt(R.styleable.SensorInfoFragment_sensorID, -2);
 
         a.recycle();
     }

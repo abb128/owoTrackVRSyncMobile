@@ -67,13 +67,10 @@ public class ConnectFragment extends GenericBindingFragment {
         ((TextView)curr_view.findViewById(R.id.statusText)).setText(to.split("\n")[0]);
     }
 
-    private boolean should_disconnect = false;
-
     @Override
     protected void onConnectionStatus(boolean to) {
         //connect_button.setEnabled(!to);
-        should_disconnect = to;
-        connect_button.setText(should_disconnect ? "Disconnect" : "Connect");
+        connect_button.setText(to ? "Disconnect" : "Connect");
         magBox.setEnabled(!to);
     }
 
@@ -122,7 +119,12 @@ public class ConnectFragment extends GenericBindingFragment {
         String filtered_port = String.valueOf(portTxt.getText()).replaceAll("[^0-9]", "");
         portTxt.setText(filtered_port);
 
-        return Integer.valueOf(filtered_port);
+        int val = 6969;
+        try{
+            val = Integer.parseInt(filtered_port);
+        }catch(NumberFormatException ignored){}
+
+        return val;
     }
 
     private boolean get_mag(){

@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
 
     public static boolean[] sensor_exist;
     public static boolean getSensorExists(int sensor){
+        if((sensor < 0) || (sensor >= 4)) return false;
         return sensor_exist[sensor];
     }
 
