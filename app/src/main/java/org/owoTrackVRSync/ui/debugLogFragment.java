@@ -39,7 +39,7 @@ public class debugLogFragment extends GenericBindingFragment {
 
     @Override
     protected void onSetStatus(String to) {
-        stat.update(to);
+        if(stat != null) stat.update(to);
     }
 
     @Override

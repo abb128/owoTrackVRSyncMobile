@@ -76,6 +76,22 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void ensureUUIDSet(){
+        SharedPreferences prefs = getSharedPreferences("UUID", Context.MODE_PRIVATE);
+
+        long val = -1;
+        if(!prefs.contains("LongVal")){
+            SharedPreferences.Editor editor = prefs.edit();
+            val = (new java.util.Random()).nextLong();
+            editor.putLong("LongVal", val);
+            editor.apply();
+        }else{
+            val = prefs.getLong("LongVal", 1);
+        }
+
+        Handshaker.setMac(val);
+    }
+
     public NavController contr;
 
     private void runDiscovery(){
@@ -88,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        ensureUUIDSet();
         fillSensorArray();
 
         setContentView(R.layout.activity_main);

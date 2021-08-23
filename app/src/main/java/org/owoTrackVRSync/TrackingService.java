@@ -46,7 +46,6 @@ public class TrackingService extends Service {
 
 
     Runnable on_death = () -> {
-            System.out.println("Death!");
             stopSelf();
             LocalBroadcastManager.getInstance(TrackingService.this).sendBroadcast(new Intent("pls-let-me-die"));
     };
@@ -80,7 +79,7 @@ public class TrackingService extends Service {
         Thread thread = new Thread(() -> {
             client.setTgt(ip_address, port_no);
             client.connect(on_death);
-            if(!client.isConnected()){
+            if(client == null || !client.isConnected()){
                 on_death.run();
             }
         });
@@ -154,6 +153,11 @@ public class TrackingService extends Service {
 
             unregisterReceiver(broadcastReceiver);
             unregisterReceiver(recenterReceiver);
+
+            if(client != null) {
+                client.stop();
+                client = null;
+            }
         }
 
     }
@@ -161,8 +165,8 @@ public class TrackingService extends Service {
     BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            stat.update("Killed.");
-            on_death.run();
+            if(stat != null) stat.update("Killed.");
+            if(on_death != null) on_death.run();
         }
     };
 
@@ -170,11 +174,8 @@ public class TrackingService extends Service {
     BroadcastReceiver recenterReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            //long currTime = System.currentTimeMillis();
-            //if((currTime - last_screen_time) < 1000){
+            if(client != null)
                 client.recenter_yaw();
-            //}
-            //last_screen_time = currTime;
         }
     };
 

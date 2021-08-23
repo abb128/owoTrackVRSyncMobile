@@ -69,9 +69,11 @@ public class ConnectFragment extends GenericBindingFragment {
 
     @Override
     protected void onConnectionStatus(boolean to) {
-        //connect_button.setEnabled(!to);
-        connect_button.setText(to ? "Disconnect" : "Connect");
-        magBox.setEnabled(!to);
+        if(connect_button != null)
+            connect_button.setText(to ? "Disconnect" : "Connect");
+
+        if(magBox != null)
+            magBox.setEnabled(!to);
     }
 
     @Override
