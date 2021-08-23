@@ -209,7 +209,5 @@ public class TrackingService extends Service {
                 .setOngoing(true).build();
 
         startForeground(1001, notification);
-
-        System.out.println("Foreground stuff done\n");
     }
 }

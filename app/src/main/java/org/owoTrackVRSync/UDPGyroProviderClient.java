@@ -124,16 +124,13 @@ public class UDPGyroProviderClient {
 
     public boolean try_handshake() {
         try {
-            System.out.println("Call try handshake");
             did_handshake_succeed = Handshaker.try_handshake(socket, handshake_required);
         } catch (HandshakeSuccessWithWarningException f){
-            System.out.println("Caught lol");
             did_handshake_succeed = true;
             handshake_required = false;
             status.update("WARNING: " + f.getMessage());
             return true;
         } catch (HandshakeFailException e) {
-            System.out.println("Got excep :(");
             e.printStackTrace();
             did_handshake_succeed = false;
             status.update(e.getMessage());
@@ -445,11 +442,5 @@ public class UDPGyroProviderClient {
         }
 
         last_kill_time = System.currentTimeMillis();
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        System.out.println("Finalizing UDPGyroProviderClient :)");
-        super.finalize();
     }
 }
