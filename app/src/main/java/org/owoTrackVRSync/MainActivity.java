@@ -95,9 +95,13 @@ public class MainActivity extends AppCompatActivity {
     public NavController contr;
 
     private void runDiscovery(){
-        AutoDiscoverer disc = new AutoDiscoverer(this);
-        Thread thrd = new Thread(disc::try_discover);
-        thrd.start();
+        if(!AutoDiscoverer.discoveryStillNecessary) return;
+
+        try {
+            AutoDiscoverer disc = new AutoDiscoverer(this);
+            Thread thrd = new Thread(disc::try_discover);
+            thrd.start();
+        } catch(OutOfMemoryError ignored){}
     }
 
     @Override
@@ -115,15 +119,7 @@ public class MainActivity extends AppCompatActivity {
 
         NavigationUI.setupWithNavController(nav, contr);
 
-        Thread auto_discover = new Thread(() -> {
-            while((!TrackingService.isInstanceCreated()) && (!AutoDiscoverer.dialogShown)){
-                runDiscovery();
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) { }
-            }
-        });
-        auto_discover.start();
+        runDiscovery();
     }
 
     @Override

@@ -64,7 +64,10 @@ public class ConnectFragment extends GenericBindingFragment {
 
     @Override
     protected void onSetStatus(String to) {
-        ((TextView)curr_view.findViewById(R.id.statusText)).setText(to.split("\n")[0]);
+        TextView text = curr_view.findViewById(R.id.statusText);
+
+        if(text != null)
+            text.setText(to.split("\n")[0]);
     }
 
     @Override

@@ -75,15 +75,20 @@ public class TrackingService extends Service {
         }
 
 
-
-        Thread thread = new Thread(() -> {
-            client.setTgt(ip_address, port_no);
-            client.connect(on_death);
-            if(client == null || !client.isConnected()){
-                on_death.run();
-            }
-        });
-        thread.start();
+        try {
+            Thread thread = new Thread(() -> {
+                client.setTgt(ip_address, port_no);
+                client.connect(on_death);
+                if (client == null || !client.isConnected()) {
+                    on_death.run();
+                }
+            });
+            thread.start();
+        } catch(OutOfMemoryError err) {
+            stat.update("Out of memory error when trying to spawn thread");
+            on_death.run();
+            return START_STICKY;
+        }
 
         listener.register_listeners();
 

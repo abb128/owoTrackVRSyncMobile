@@ -177,8 +177,13 @@ public class UDPGyroProviderClient {
             AutoDiscoverer.discoveryStillNecessary = false;
 
             if(listening_thread != null) listening_thread.interrupt();
-            listening_thread = new Thread(listen_task);
-            listening_thread.start();
+            try {
+                listening_thread = new Thread(listen_task);
+                listening_thread.start();
+            }catch(OutOfMemoryError e){
+                status.update("Ran out of memory trying to spawn listening_thread");
+                isConnected = false;
+            }
         }
 
         return isConnected;
@@ -202,35 +207,37 @@ public class UDPGyroProviderClient {
                 is_retrying = true;
             }
 
-            retry_thread = new Thread(() -> {
-                try {
-                    for (int i = 0; i < 10; i++) {
-                        status.update("Connection died unexpectedly, trying to reconnect...");
+            try {
+                retry_thread = new Thread(() -> {
+                    try {
+                        for (int i = 0; i < 10; i++) {
+                            status.update("Connection died unexpectedly, trying to reconnect...");
 
 
-                        if (socket == null) return;
+                            if (socket == null) return;
 
-                        if (isConnected) break;
-                        if (connect(on_connection_death)) break;
+                            if (isConnected) break;
+                            if (connect(on_connection_death)) break;
 
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException ignored) {
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException ignored) {
+                            }
+                        }
+                    } finally {
+                        synchronized (retry) {
+                            is_retrying = false;
+
+                            if (!isConnected) {
+                                status.update("Failed to reconnect after 10 tries");
+                                on_connection_death.run();
+                            }
                         }
                     }
-                } finally {
-                    synchronized (retry) {
-                        is_retrying = false;
+                });
 
-                        if(!isConnected) {
-                            status.update("Failed to reconnect after 10 tries");
-                            on_connection_death.run();
-                        }
-                    }
-                }
-            });
-
-            retry_thread.start();
+                retry_thread.start();
+            }catch(OutOfMemoryError ignored){}
         }
     }
 
