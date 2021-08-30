@@ -375,7 +375,11 @@ public class UDPGyroProviderClient {
     private boolean flush_packet(int timeout){
         DatagramPacket packet = null;
         try {
-            packet = packets.poll(timeout, TimeUnit.MILLISECONDS);
+            if(timeout > 0) {
+                packet = packets.poll(timeout, TimeUnit.MILLISECONDS);
+            }else{
+                packet = packets.poll();
+            }
         } catch (InterruptedException e) {
             return false;
         }
