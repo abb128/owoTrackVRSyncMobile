@@ -64,6 +64,8 @@ public class ConnectFragment extends GenericBindingFragment {
 
     @Override
     protected void onSetStatus(String to) {
+        if(curr_view == null) return;
+
         TextView text = curr_view.findViewById(R.id.statusText);
 
         if(text != null)

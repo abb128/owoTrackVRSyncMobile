@@ -48,10 +48,9 @@ public class Handshaker {
 
         final int[] imuInfo = {0, 0, 0};
 
-        final int firmwareBuild = 7;
+        final int firmwareBuild = 8;
 
-        final byte firmwareLength = 0;
-
+        final byte[] firmware = {'o', 'w', 'o', 'T', 'r', 'a', 'c', 'k', '8'}; // 9 bytes
 
         buff.putInt(boardType); // 4 bytes
         buff.putInt(imuType);   // 4 bytes
@@ -62,7 +61,8 @@ public class Handshaker {
 
         buff.putInt(firmwareBuild); // 4 bytes
 
-        buff.put(firmwareLength); // 1 bytes
+        buff.put((byte)firmware.length); // 1 bytes
+        buff.put(firmware);
 
         byte[] mac = getMac();
         assert(mac.length == 6);
@@ -86,7 +86,7 @@ public class Handshaker {
             // compatibility the slime extensions are not sent after a
             // certain number of failures
             boolean sendSlimeExtensions = (tries < 7);
-            if(sendSlimeExtensions) len += 36;
+            if(sendSlimeExtensions) len += 36 + 9;
 
             ByteBuffer handshake_buff = ByteBuffer.allocate(len);
             handshake_buff.putInt(3);

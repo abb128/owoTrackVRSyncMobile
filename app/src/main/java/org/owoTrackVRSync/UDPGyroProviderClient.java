@@ -1,32 +1,58 @@
 package org.owoTrackVRSync;
 
-import android.app.IntentService;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.AsyncTask;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-
-import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.PortUnreachableException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.Date;
+
+
+class UDPPackets {
+    static final int HEARTBEAT = 0;
+    static final int ROTATION = 1;
+    static final int GYRO = 2;
+    static final int HANDSHAKE = 3;
+    static final int ACCEL = 4;
+    static final int MAG = 5;
+    static final int RAW_CALIBRATION_DATA = 6;
+    static final int CALIBRATION_FINISHED = 7;
+    static final int CONFIG = 8;
+    static final int RAW_MAGENTOMETER = 9;
+    static final int PING_PONG = 10;
+    static final int SERIAL = 11;
+    static final int BATTERY_LEVEL = 12;
+    static final int TAP = 13;
+    static final int RESET_REASON = 14;
+    static final int SENSOR_INFO = 15;
+    static final int ROTATION_2 = 16;
+    static final int ROTATION_DATA = 17;
+    static final int MAGENTOMETER_ACCURACY = 18;
+
+    static final int BUTTON_PUSHED = 60;
+    static final int SEND_MAG_STATUS = 61;
+    static final int CHANGE_MAG_STATUS = 62;
+
+
+    static final int RECIEVE_HEARTBEAT = 1;
+    static final int RECIEVE_VIBRATE = 2;
+    static final int RECIEVE_HANDSHAKE = 3;
+    static final int RECIEVE_COMMAND = 4;
+
+
+}
 
 public class UDPGyroProviderClient {
     private int port_v;
@@ -261,10 +287,75 @@ public class UDPGyroProviderClient {
     }
 
 
+    private boolean big_endian = true;
+    private void parse_packet(int msg_type, int msg_len, ByteBuffer buff, boolean recursive) {
+        switch (msg_type) {
+            case UDPPackets.RECIEVE_HEARTBEAT: {
+                // just heartbeat
+                // check if our sensors are working
+                long lastSent = (last_packetsend_time - last_heartbeat_time);
+                if ((lastSent > (3_000)) && (num_packetsend < 32)) {
+                    status.update(String.format("Android OS is not providing rotational data. " +
+                                    "It has been %d ms with only %d rotations provided. " +
+                                    "If you're using a custom ROM it's likely that your ROM doesn't implement registerListener Sensor.TYPE_ROTATION_VECTOR",
+                            (int) lastSent, (int) num_packetsend));
+                    killConnection(false);
+                    return;
+                }
+                break;
+            }
+
+            case UDPPackets.RECIEVE_VIBRATE: {
+                // vibrate
+                float duration_s = buff.getFloat();
+                float frequency = buff.getFloat();
+                float amplitude = buff.getFloat();
+
+                Vibrator v = (Vibrator) service.getSystemService(Context.VIBRATOR_SERVICE);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    v.vibrate(VibrationEffect.createOneShot((long) (duration_s * 1000), (int) (amplitude * 255)));
+                } else {
+                    v.vibrate((long) (duration_s * 1000));
+                }
+                break;
+            }
+
+            case UDPPackets.CHANGE_MAG_STATUS: {
+                char c = buff.getChar();
+                if (listener != null)
+                    listener.change_realtime_geomagnetic(c == 'y');
+                break;
+            }
+
+            case UDPPackets.PING_PONG: {
+                sendPacket(buff, msg_len);
+                break;
+            }
+
+            default: {
+                // owoTrack server sends packets in little-endian for simplicity,
+                // but SlimeVR server sends them in big-endian, so we need to switch
+                // endianness on the fly if the packet ID is extremely big
+                if (msg_type >= 2048) {
+                    big_endian = !big_endian;
+                    if(recursive) {
+                        // oops! looks like that wasnt it, return to avoid infinite recursion
+                        System.out.println("STILL unknown! " + msg_type);
+                        return;
+                    }
+                    System.out.println("Flipping endianness..");
+                    buff.order(big_endian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
+                    buff.rewind();
+                    parse_packet(buff.getInt(), msg_len, buff, true);
+                }
+            }
+        }
+    }
+
     boolean magMsgWaiting = false;
     boolean magMsgContents = false;
     Runnable listen_task = () -> {
-            byte[] buffer = new byte[64];
+            byte[] buffer = new byte[256];
             while (isConnected && !Thread.currentThread().isInterrupted()) {
                 if(magMsgWaiting){
                     provide_mag_enabled(magMsgContents);
@@ -272,7 +363,7 @@ public class UDPGyroProviderClient {
                 }
                 try {
                     socket.setSoTimeout(1000);
-                    DatagramPacket p = new DatagramPacket(buffer, 64);
+                    DatagramPacket p = new DatagramPacket(buffer, 256);
                     try {
                         socket.receive(p);
                     } catch (SocketTimeoutException e) {
@@ -281,45 +372,18 @@ public class UDPGyroProviderClient {
 
                     last_heartbeat_time = System.currentTimeMillis();
 
-                    ByteBuffer buff = ByteBuffer.wrap(buffer, 0, 64);
-                    buff.order(ByteOrder.LITTLE_ENDIAN);
+                    ByteBuffer buff = ByteBuffer.wrap(buffer, 0, p.getLength());
+                    buff.order(big_endian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
                     buff.position(0);
                     int msg_type = buff.getInt();
 
-                    if((last_heartbeat_time - last_batterysend_time) > 10000){
+                    if ((last_heartbeat_time - last_batterysend_time) > 10000) {
                         last_batterysend_time = last_heartbeat_time;
                         provide_battery();
                     }
 
-                    if (msg_type == 1) {
-                        // just heartbeat
-                        // check if our sensors are working
-                        long lastSent = (last_packetsend_time - last_heartbeat_time);
-                        if( (lastSent > (3_000)) && (num_packetsend < 32) ){
-                            status.update(String.format("Android OS is not providing rotational data. " +
-                                    "It has been %d ms with only %d rotations provided. " +
-                                    "If you're using a custom ROM it's likely that your ROM doesn't implement registerListener Sensor.TYPE_ROTATION_VECTOR",
-                                    (int)lastSent, (int)num_packetsend));
-                            killConnection(false);
-                            return;
-                        }
-                    }else if(msg_type == 2) {
-                        // vibrate
-                        float duration_s = buff.getFloat();
-                        float frequency = buff.getFloat();
-                        float amplitude = buff.getFloat();
+                    parse_packet(msg_type, p.getLength(), buff, false);
 
-                        Vibrator v = (Vibrator) service.getSystemService(Context.VIBRATOR_SERVICE);
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            v.vibrate(VibrationEffect.createOneShot((long) (duration_s * 1000), (int) (amplitude * 255)));
-                        } else {
-                            v.vibrate((long) (duration_s * 1000));
-                        }
-                    }else if(msg_type == 7){
-                        // change geomagnetic type
-                        char c = buff.getChar();
-                        if(listener != null) listener.change_realtime_geomagnetic(c == 'y');
-                    }
                 } catch (Exception e) {
                     if(Thread.currentThread().isInterrupted()) return;
 
@@ -367,7 +431,7 @@ public class UDPGyroProviderClient {
         int len = 12 + 4;
 
         ByteBuffer buff = ByteBuffer.allocate(len);
-        buff.putInt(12);
+        buff.putInt(UDPPackets.BATTERY_LEVEL);
         buff.putLong(packet_id++);
         buff.putFloat((float)battery_level);
 
@@ -403,7 +467,7 @@ public class UDPGyroProviderClient {
         }
 
         ByteBuffer buff = ByteBuffer.allocate(len);
-        buff.putInt(5);
+        buff.putInt(UDPPackets.SEND_MAG_STATUS);
         buff.putLong(packet_id++);
         buff.putChar(enabled ? 'y' : 'n');
 
@@ -411,27 +475,27 @@ public class UDPGyroProviderClient {
 
     }
 
-    public void recenter_yaw(){
+    public void button_pushed(){
         int len = 12 + 1;
         ByteBuffer buff = ByteBuffer.allocate(len);
-        buff.putInt(6);
+        buff.putInt(UDPPackets.BUTTON_PUSHED);
         buff.putLong(packet_id++);
 
         sendPacket(buff, len);
     }
 
     public void provide_gyro(float[] gyro_v){
-        provide_floats(gyro_v,  3, 2);
+        provide_floats(gyro_v,  3, UDPPackets.GYRO);
     }
 
     public void provide_rot(float[] rot_q){
-        provide_floats(rot_q,  4, 1);
+        provide_floats(rot_q,  4, UDPPackets.ROTATION);
         num_packetsend++;
         last_packetsend_time = System.currentTimeMillis();
     }
 
     public void provide_accel(float[] accel){
-        provide_floats(accel,  3, 4);
+        provide_floats(accel,  3, UDPPackets.ACCEL);
     }
 
     public void set_listener(GyroListener gyroListener) {

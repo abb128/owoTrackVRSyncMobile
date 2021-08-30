@@ -1,6 +1,5 @@
 package org.owoTrackVRSync;
 
-import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -11,7 +10,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.SensorManager;
-import android.media.AudioAttributes;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
@@ -20,8 +18,6 @@ import android.os.PowerManager;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -180,7 +176,7 @@ public class TrackingService extends Service {
         @Override
         public void onReceive(Context context, Intent intent) {
             if(client != null)
-                client.recenter_yaw();
+                client.button_pushed();
         }
     };
 

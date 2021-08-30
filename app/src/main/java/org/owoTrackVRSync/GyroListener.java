@@ -25,6 +25,9 @@ public class GyroListener implements SensorEventListener {
     private float[] rotation_quat;
     private float[] gyro_vec;
 
+    private int magnetometerAccuracy = -1;
+    public int get_magnetometer_accuracy() { return magnetometerAccuracy; }
+
 
 
     private boolean use_geomagnetic = true;
@@ -49,6 +52,8 @@ public class GyroListener implements SensorEventListener {
 
         set_sensor_type(use_geomagnetic);
         logger.update("Using " + sensor_type);
+
+        magnetometerAccuracy = -1;
 
         RotationSensor = sensorManager.getDefaultSensor(ROTATION_SENSOR_TYPE);
         if(RotationSensor == null){
@@ -90,6 +95,8 @@ public class GyroListener implements SensorEventListener {
     }
 
     public void change_realtime_geomagnetic(boolean geomagnetic){
+        magnetometerAccuracy = -1;
+
         sensorManager.unregisterListener(this);
         set_sensor_type(geomagnetic);
         register_listeners();
@@ -122,6 +129,11 @@ public class GyroListener implements SensorEventListener {
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        //magnetometerAccuracy = accuracy;
+        //if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+        //    System.out.println("@@@ Accuracy for " + sensor.getStringType() + " : " + String.valueOf(accuracy));
+        //}
 
+        //udpClient.provide_accuracy(accuracy);
     }
 }
