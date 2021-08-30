@@ -3,6 +3,7 @@ package org.owoTrackVRSync;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.PortUnreachableException;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
@@ -71,7 +72,9 @@ public class Handshaker {
         buff.put((byte)0xFF); // top it off
     }
 
-    public static boolean try_handshake(DatagramSocket socket, boolean strict) throws HandshakeSuccessWithWarningException, HandshakeFailException {
+    public static boolean try_handshake(DatagramSocket socket, boolean strict, InetAddress ip, int port) throws HandshakeSuccessWithWarningException, HandshakeFailException {
+        //if(ip.toString().endsWith(".255")) return true;
+
         byte[] buffer = new byte[64];
         DatagramPacket handshake_receive = new DatagramPacket(buffer, 64);
 
@@ -105,7 +108,8 @@ public class Handshaker {
                 throw new HandshakeFailException("Connection timed out. Ensure IP and port are correct, that the server is running and not blocked by Windows Firewall (try changing your network type to private in Windows, or running the firewall script) or blocked by router, and that you're connected to the same network (you may need to disable Mobile Data)");
             }
             try {
-                socket.send(new DatagramPacket(handshake_buff.array(), len));
+                if(socket == null) throw new HandshakeFailException("Socket is null!");
+                socket.send(new DatagramPacket(handshake_buff.array(), len, ip, port));
 
                 try {
                     socket.setSoTimeout(250);

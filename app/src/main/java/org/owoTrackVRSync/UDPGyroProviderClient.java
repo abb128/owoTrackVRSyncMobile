@@ -18,6 +18,9 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 
 class UDPPackets {
@@ -150,7 +153,7 @@ public class UDPGyroProviderClient {
 
     public boolean try_handshake() {
         try {
-            did_handshake_succeed = Handshaker.try_handshake(socket, handshake_required);
+            did_handshake_succeed = Handshaker.try_handshake(socket, handshake_required, ip_addr, port_v);
         } catch (HandshakeSuccessWithWarningException f){
             did_handshake_succeed = true;
             handshake_required = false;
@@ -166,11 +169,16 @@ public class UDPGyroProviderClient {
         return did_handshake_succeed;
     }
 
+    private boolean isBroadcasting(){
+        return ip_addr.toString().endsWith(".255");
+    }
+
     private boolean isConnected = false;
 
     private Runnable on_connection_death;
 
     Thread listening_thread = null;
+    Thread sending_thread = null;
     public boolean connect(Runnable on_death){
         if(socket == null) return false;
 
@@ -182,20 +190,22 @@ public class UDPGyroProviderClient {
             return false;
         }
 
-        status.update("Attempting connection...");
-        try {
-            socket.connect(new InetSocketAddress(ip_addr, port_v));
-        } catch (Exception e) {
-            status.update("Connect: " + e.toString());
-            e.printStackTrace();
-            return false;
+        if(!isBroadcasting()) {
+            status.update("Attempting connection...");
+            try {
+                socket.connect(new InetSocketAddress(ip_addr, port_v));
+            } catch (Exception e) {
+                status.update("Connect: " + e.toString());
+                e.printStackTrace();
+                return false;
+            }
         }
 
         if(!try_handshake()){
             return false;
         }
         did_handshake_succeed = true;
-        isConnected = socket.isConnected();
+        isConnected = isBroadcasting() ? true : socket.isConnected();
         if(isConnected){
             last_heartbeat_time = System.currentTimeMillis();
             last_packetsend_time = last_heartbeat_time;
@@ -208,6 +218,15 @@ public class UDPGyroProviderClient {
                 listening_thread.start();
             }catch(OutOfMemoryError e){
                 status.update("Ran out of memory trying to spawn listening_thread");
+                isConnected = false;
+            }
+
+            if(sending_thread != null) sending_thread.interrupt();
+            try {
+                sending_thread = new Thread(send_task);
+                sending_thread.start();
+            }catch(OutOfMemoryError e){
+                status.update("Ran out of memory trying to spawn sending_thread");
                 isConnected = false;
             }
         }
@@ -226,6 +245,7 @@ public class UDPGyroProviderClient {
         did_handshake_succeed = false;
 
         if(listening_thread != null) listening_thread.interrupt();
+        if(sending_thread != null) sending_thread.interrupt();
 
         if(unexpected){
             synchronized (retry) {
@@ -352,8 +372,54 @@ public class UDPGyroProviderClient {
         }
     }
 
+    private boolean flush_packet(int timeout){
+        DatagramPacket packet = null;
+        try {
+            packet = packets.poll(timeout, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            return false;
+        }
+        if(Thread.currentThread().isInterrupted()) return false;
+        if(packet != null) {
+            try {
+                socket.send(packet);
+                failed_in_series = 0;
+            } catch (Exception e) {
+                e.printStackTrace();
+                // Log it if enough time has passed since previous log
+                long curr_time = System.currentTimeMillis();
+                if (curr_time - last_error > 1000) {
+                    status.update("Packet Send: " + e.toString());
+                    last_error = curr_time;
+                }
+
+                // Kill connection if we failed too many times
+                failed_in_series++;
+                if (failed_in_series > 10) {
+                    status.update("Packet sends are continuously failing, treating connection as dead");
+                    killConnection(true);
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private ArrayBlockingQueue<DatagramPacket> packets = new ArrayBlockingQueue<DatagramPacket>(64);
+
+    private long packet_id = 0;
+
+    int failed_in_series = 0;
+    long last_error = 0;
     boolean magMsgWaiting = false;
     boolean magMsgContents = false;
+
+    Runnable send_task = () -> {
+        while (isConnected && !Thread.currentThread().isInterrupted()) {
+            flush_packet(250);
+        }
+    };
+
     Runnable listen_task = () -> {
             byte[] buffer = new byte[256];
             while (isConnected && !Thread.currentThread().isInterrupted()) {
@@ -362,7 +428,7 @@ public class UDPGyroProviderClient {
                     magMsgWaiting = false;
                 }
                 try {
-                    socket.setSoTimeout(1000);
+                    socket.setSoTimeout(250);
                     DatagramPacket p = new DatagramPacket(buffer, 256);
                     try {
                         socket.receive(p);
@@ -383,7 +449,7 @@ public class UDPGyroProviderClient {
                     }
 
                     parse_packet(msg_type, p.getLength(), buff, false);
-
+                    while(flush_packet(0));
                 } catch (Exception e) {
                     if(Thread.currentThread().isInterrupted()) return;
 
@@ -394,33 +460,8 @@ public class UDPGyroProviderClient {
             }
     };
 
-    private long packet_id = 0;
-
-    int failed_in_series = 0;
-    long last_error = 0;
     private boolean sendPacket(ByteBuffer buff, int len){
-        DatagramPacket packet = new DatagramPacket(buff.array(), len);
-        try {
-            socket.send(packet);
-            failed_in_series = 0;
-        } catch (Exception e) {
-            // Log it if enough time has passed since previous log
-            long curr_time = System.currentTimeMillis();
-            if(curr_time - last_error > 1000) {
-                status.update("Packet Send: " + e.toString());
-                last_error = curr_time;
-            }
-
-            // Kill connection if we failed too many times
-            failed_in_series++;
-            if(failed_in_series > 10){
-                status.update("Packet sends are continuously failing, treating connection as dead");
-                killConnection(true);
-            }
-
-            return false;
-        }
-        return true;
+        return packets.offer(new DatagramPacket(buff.array(), len, ip_addr, port_v));
     }
 
     private void provide_battery(){
