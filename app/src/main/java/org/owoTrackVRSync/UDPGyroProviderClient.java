@@ -374,6 +374,7 @@ public class UDPGyroProviderClient {
 
     private boolean flush_packet(int timeout){
         DatagramPacket packet = null;
+        if(packets == null) return false;
         try {
             if(timeout > 0) {
                 packet = packets.poll(timeout, TimeUnit.MILLISECONDS);
@@ -385,6 +386,7 @@ public class UDPGyroProviderClient {
         }
         if(Thread.currentThread().isInterrupted()) return false;
         if(packet != null) {
+            if(socket == null) return false;
             try {
                 socket.send(packet);
                 failed_in_series = 0;
@@ -453,6 +455,9 @@ public class UDPGyroProviderClient {
                     }
 
                     parse_packet(msg_type, p.getLength(), buff, false);
+
+                    // parse_packet may have added a few packets to the queue, so
+                    // flush it if we can
                     while(flush_packet(0));
                 } catch (Exception e) {
                     if(Thread.currentThread().isInterrupted()) return;
