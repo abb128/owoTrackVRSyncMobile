@@ -3,8 +3,19 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="app/src/main/res/layout/activity_main.xml" value="0.1" />
+        <entry key="app/src/main/res/layout/activity_main_watch.xml" value="0.34375" />
+        <entry key="app/src/main/res/layout/fragment_connect.xml" value="0.4674479166666667" />
         <entry key="app/src/main/res/layout/fragment_home_menu.xml" value="0.19947916666666668" />
         <entry key="app/src/main/res/menu/main_menu.xml" value="0.19947916666666668" />
+        <entry key="owoTrackLib/src/main/res/layout/fragment_debug_log.xml" value="0.190625" />
+        <entry key="owoTrackMobile/src/main/res/layout/activity_main.xml" value="1.10546875" />
+        <entry key="owoTrackMobile/src/main/res/layout/fragment_connect.xml" value="1.0166666666666666" />
+        <entry key="owoTrackMobile/src/main/res/layout/fragment_debug_log.xml" value="1.0166666666666666" />
+        <entry key="owoTrackMobile/src/main/res/layout/fragment_home_menu.xml" value="1.0166666666666666" />
+        <entry key="owoTrackMobile/src/main/res/layout/fragment_sensor_info.xml" value="1.10546875" />
+        <entry key="owoTrackWear/src/main/res/layout/activity_mainwear.xml" value="0.17291666666666666" />
+        <entry key="owotrackwear/src/main/res/layout/activity_mainwear.xml" value="0.4674479166666667" />
       </map>
     </option>
   </component>

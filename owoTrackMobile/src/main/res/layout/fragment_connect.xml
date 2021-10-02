@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".Mobile.ui.ConnectFragment"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Enter the IP and port, then connect." />
+
+    <EditText
+        android:id="@+id/editIP"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="IP address"
+        android:inputType="textNoSuggestions"
+        android:text="192.168.24.150" />
+
+    <EditText
+        android:id="@+id/editPort"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="Port"
+        android:inputType="number"
+        android:text="6969" />
+
+    <CheckBox
+        android:id="@+id/magnetCheckbox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Use Magnetometer" />
+
+    <Button
+        android:id="@+id/connectButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Connect" />
+
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Status will appear here" />
+
+</LinearLayout>

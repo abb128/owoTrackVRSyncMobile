@@ -1,0 +1,36 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    compileSdkVersion 31
+
+    defaultConfig {
+        applicationId "org.owoTrack.Wear"
+        minSdkVersion 25
+        targetSdkVersion 31
+        versionCode 1
+        versionName "1.0"
+
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    buildFeatures {
+        viewBinding true
+    }
+}
+
+dependencies {
+
+    implementation 'com.google.android.gms:play-services-wearable:17.0.0'
+    implementation 'androidx.percentlayout:percentlayout:1.0.0'
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation 'androidx.recyclerview:recyclerview:1.2.0'
+    implementation 'androidx.wear:wear:1.2.0'
+    implementation project(path: ':owoTrackLib')
+}

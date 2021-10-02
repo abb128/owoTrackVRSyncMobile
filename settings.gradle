@@ -1,2 +1,4 @@
-include ':app'
-rootProject.name = "owoTrackVRSyncMobile"
+include ':owoTrackLib'
+rootProject.name = "owoTrack"
+include ':owoTrackMobile'
+include ':owoTrackWear'

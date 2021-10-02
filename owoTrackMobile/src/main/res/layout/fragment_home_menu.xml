@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".Mobile.ui.homeMenu">
+
+    <LinearLayout android:orientation="vertical"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:showDividers="middle"
+        android:divider="@drawable/empty_tall_divider">
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:text="owo"
+            android:textSize="24sp" />
+
+        <TextView
+            android:id="@+id/textView3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/sleep_warning" />
+
+        <TextView
+            android:id="@+id/sensorWarningTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="false"
+            android:orientation="vertical">
+
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/sensorfragment_gyro"
+                android:name="org.owoTrack.Mobile.ui.SensorInfoFragment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:sensorID="@integer/gyroscope"
+                app:sensorName="Gyroscope" />
+
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/sensorfragment_gamerotation"
+                android:name="org.owoTrack.Mobile.ui.SensorInfoFragment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:sensorID="@integer/game_rotation_vector"
+                app:sensorName="Game Rotation" />
+
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/sensorfragment_georotation"
+                android:name="org.owoTrack.Mobile.ui.SensorInfoFragment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:sensorID="@integer/rotation_vector"
+                app:sensorName="Geomagnetic Rotation" />
+
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/sensorfragment_lacc"
+                android:name="org.owoTrack.Mobile.ui.SensorInfoFragment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:sensorID="@integer/linear_acceleration"
+                app:sensorName="Linear Acceleration" />
+
+
+
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>
