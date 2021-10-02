@@ -5,4 +5,18 @@
     values-round/strings.xml for round devices.
     -->
     <string name="hello_world">Hello Square World!</string>
+    <string name="appTitle">owoTrack</string>
+    <string name="sensor_select">Pick sensor</string>
+    <string name="mag_rotation">Mag. Rotation</string>
+    <string name="game_rotation">Game Rotation</string>
+    <string name="connect">Connect</string>
+
+    <string name="searching">Searching…</string>
+    <string name="not_found">No server found</string>
+
+    <string name="broadcasting">Broadcasting</string>
+    <string name="connected">Connected</string>
+    <string name="error_no_sensors">No compatible sensors have been found on this watch :(</string>
+
+    <string name="disconnect">Disconnect</string>
 </resources>

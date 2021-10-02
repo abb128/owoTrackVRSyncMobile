@@ -193,7 +193,7 @@ public class TrackingService extends Service {
         NotificationManager nm = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
 
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            nm.createNotificationChannel(new NotificationChannel("NOTIFICATION_CHANNEL_ID", "namee", NotificationManager.IMPORTANCE_DEFAULT));
+            nm.createNotificationChannel(new NotificationChannel("NOTIFICATION_CHANNEL_ID", "Foreground Service", NotificationManager.IMPORTANCE_DEFAULT));
         }
 
         registerReceiver(broadcastReceiver, new IntentFilter("kill-ze-service"));

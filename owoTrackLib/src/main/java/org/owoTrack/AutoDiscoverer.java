@@ -77,44 +77,93 @@ public class AutoDiscoverer {
         });
     }
 
-    public void try_discover(){
-        while(discoveryStillNecessary) {
-            try {
-                DatagramSocket socket = new DatagramSocket();
-                {
-                    String handshake = "DISCOVERY";
-                    DatagramPacket packet = new DatagramPacket(handshake.getBytes(), handshake.length(),
-                            InetAddress.getByName(mcastAddress), port);
+    public static class DiscoveryResult {
+        public boolean found;
 
-                    socket.send(packet);
+        public InetAddress server_address;
+        public int port;
 
-                    socket.setBroadcast(true);
+        public String name;
 
-                    ByteBuffer buff = ByteBuffer.allocate(128);
-                    DatagramPacket pkt = new DatagramPacket(buff.array(), buff.capacity());
-                    socket.setSoTimeout(5000);
-                    socket.receive(pkt);
+        DiscoveryResult(){}
 
-                    String response = new String(buff.array());
+        public static DiscoveryResult none(){
+            DiscoveryResult result = new DiscoveryResult();
+            result.found = false;
+
+            return result;
+        }
+
+        public static DiscoveryResult some(InetAddress srv, int port, String name){
+            DiscoveryResult result = new DiscoveryResult();
+            result.found = true;
+            result.server_address = srv;
+            result.port = port;
+            result.name = name;
+
+            return result;
+        }
+    }
 
 
-                    for (String line : response.split("\n")) {
-                        try {
-                            int port = Integer.parseInt(line.split(":")[0]);
-                            String name = line.split(":")[1];
+    private static DiscoveryResult attempt_discover_infoserver(int timeout){
+        try {
+            DatagramSocket socket = new DatagramSocket();
+            {
+                String handshake = "DISCOVERY";
+                DatagramPacket packet = new DatagramPacket(handshake.getBytes(), handshake.length(),
+                        InetAddress.getByName(mcastAddress), port);
 
-                            if (port > 0) {
-                                discoveryStillNecessary = false;
-                                alert(pkt.getAddress(), port, name);
-                                break;
-                            }
-                        } catch (NumberFormatException ignored) {
+                socket.send(packet);
+
+                socket.setBroadcast(true);
+
+                ByteBuffer buff = ByteBuffer.allocate(128);
+                DatagramPacket pkt = new DatagramPacket(buff.array(), buff.capacity());
+                socket.setSoTimeout(timeout);
+                socket.receive(pkt);
+
+
+                String response = new String(buff.array());
+
+
+                for (String line : response.split("\n")) {
+                    try {
+                        int port = Integer.parseInt(line.split(":")[0]);
+                        String name = line.split(":")[1];
+
+                        if (port > 0) {
+                            //discoveryStillNecessary = false;
+                            //alert(pkt.getAddress(), port, name);
+                            return DiscoveryResult.some(pkt.getAddress(), port, name);
                         }
+                    } catch (NumberFormatException ignored) {
                     }
                 }
-            } catch (SocketTimeoutException ignored){
-            } catch (Exception e) {
-                e.printStackTrace();
+            }
+        } catch (SocketTimeoutException ignored){
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return DiscoveryResult.none();
+    }
+
+    public static DiscoveryResult attempt_discover(int timeout){
+        DiscoveryResult info_result = attempt_discover_infoserver(timeout);
+        if(info_result.found) return info_result;
+
+        return DiscoveryResult.none();
+    }
+
+    public void try_discover(){
+        while(discoveryStillNecessary) {
+            DiscoveryResult result = attempt_discover(5000);
+
+            if(result.found){
+                discoveryStillNecessary = false;
+                alert(result.server_address, result.port, result.name);
+                break;
             }
         }
     }
