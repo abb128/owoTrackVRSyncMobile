@@ -43,10 +43,15 @@ public class MainWear extends Activity {
     boolean connected;
 
 
-    private void onSetStatus(String to){
+    private void onSetStatus(String to){;
+        if(to.contains("Service not start")) return;
+
         System.out.println("Status " + to);
+        String[] lines = to.split("\n");
+        debugText.setText(lines[lines.length-1]);
     }
     private void onConnectionStatus(boolean to){
+        setConnectedStatus(connecting, to);
     };
 
     private void updateSensorStatus(){
@@ -226,7 +231,8 @@ public class MainWear extends Activity {
 
             server_found = true;
             debugText.setText("Connect to " + result.server_address.toString() + ":" + String.valueOf(result.port));
-            // TODO
+
+            this.connect(result.server_address.toString(), result.port, use_mag);
         }finally{
             connecting_lock.unlock();
             boolean finalServer_found = server_found;
@@ -258,6 +264,17 @@ public class MainWear extends Activity {
 
     private void onConnectClick(View view) {
         if(dead_no_sensors) return;
+
+
+        if((service_v != null) && (service_v.is_running())){
+            onSetStatus("Killing service...");
+            Intent intent = new Intent("kill-ze-service");
+            this.sendBroadcast(intent);
+
+            setConnectedStatus(false, false);
+            return;
+        }
+
         setConnectedStatus(true, false);
 
         Thread thread = new Thread(this::runConnectionProcedure);
@@ -267,7 +284,7 @@ public class MainWear extends Activity {
 
     private void onConnectHold(View view) {
         if(dead_no_sensors) return;
-        debugText.setText("Secret :)");
+        debugText.setText("Debug connect to 192.168.32.50");
 
         Thread thread = new Thread(() -> {
             this.connect("192.168.32.50", 6969, true);
