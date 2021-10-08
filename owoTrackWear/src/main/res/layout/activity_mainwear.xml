@@ -18,6 +18,7 @@
         app:layout_boxedEdges="all">
 
         <LinearLayout
+            android:id="@+id/mainLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
@@ -38,11 +39,13 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical">
 
+
                 <LinearLayout
                     android:id="@+id/sensorPickLayout"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:paddingBottom="8dp">
 
                     <TextView
                         android:id="@+id/pickSensor"
@@ -72,6 +75,58 @@
                     </RadioGroup>
                 </LinearLayout>
 
+
+                <LinearLayout
+                    android:id="@+id/connectionLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/connectionTxt"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/connection" />
+
+                    <CheckBox
+                        android:id="@+id/autodiscover"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:minHeight="48dp"
+                        android:text="@string/autodiscover" />
+
+                    <LinearLayout
+                        android:id="@+id/manualConnect"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <EditText
+                            android:id="@+id/editIpAddr"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:ems="10"
+                            android:hint="@string/ip_address"
+                            android:importantForAutofill="no"
+                            android:inputType="textNoSuggestions"
+                            android:minHeight="48dp" />
+
+                        <EditText
+                            android:id="@+id/editPort"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:ems="10"
+                            android:hint="@string/port"
+                            android:importantForAutofill="no"
+                            android:inputType="textNoSuggestions|number"
+                            android:minHeight="48dp"
+                            android:text="6969" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
                 <LinearLayout
                     android:id="@+id/connectLayout"
                     android:layout_width="match_parent"
@@ -82,7 +137,8 @@
                         android:id="@+id/spinner"
                         style="?android:attr/progressBarStyle"
                         android:layout_width="match_parent"
-                        android:layout_height="48dp" />
+                        android:layout_height="48dp"
+                        android:visibility="gone" />
 
                     <Button
                         android:id="@+id/connectButton"
@@ -93,7 +149,8 @@
                     <TextView
                         android:id="@+id/debugText"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content" />
+                        android:layout_height="wrap_content"
+                        android:text="@string/you_will_be_automatically_connected_to_wifi" />
                 </LinearLayout>
 
             </LinearLayout>

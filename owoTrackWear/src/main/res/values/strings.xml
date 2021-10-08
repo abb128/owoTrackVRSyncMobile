@@ -19,4 +19,9 @@
     <string name="error_no_sensors">No compatible sensors have been found on this watch :(</string>
 
     <string name="disconnect">Disconnect</string>
+    <string name="autodiscover">Autodiscover</string>
+    <string name="ip_address">IP address</string>
+    <string name="connection">Connection</string>
+    <string name="port">Port</string>
+    <string name="you_will_be_automatically_connected_to_wifi">You will be automatically connected to WiFi</string>
 </resources>

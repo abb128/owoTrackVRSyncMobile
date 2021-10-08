@@ -10,6 +10,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.SensorManager;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkRequest;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
@@ -96,10 +100,50 @@ public class TrackingService extends Service {
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, tag);
         wakeLock.acquire();
 
-
         register_recenter_yaw();
 
+        ignoreWifi = false;
+        lockWifi();
+
         return START_STICKY;
+    }
+
+    boolean ignoreWifi = false;
+    ConnectivityManager.NetworkCallback callback = null;
+
+    private void lockWifi(){
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+            if(callback == null) {
+                callback = new ConnectivityManager.NetworkCallback() {
+                    public void onAvailable(Network network) {
+                        if(ignoreWifi) return;
+
+                        super.onAvailable(network);
+                        connectivityManager.bindProcessToNetwork(network);
+                    }
+                };
+            }
+
+            connectivityManager.requestNetwork(
+                    new NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build(),
+                    callback
+            );
+        }
+    }
+
+    private void unlockWifi(){
+        ignoreWifi = true;
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            connectivityManager.bindProcessToNetwork(null);
+            if(callback != null)
+                connectivityManager.unregisterNetworkCallback(callback);
+            callback = null;
+
+        }
     }
 
     private final IBinder localBinder = new TrackingBinder();
@@ -142,6 +186,7 @@ public class TrackingService extends Service {
     public void onDestroy() {
         instance = null;
         LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent("cya-ded"));
+        unlockWifi();
         if(listener != null) {
             Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

@@ -7,13 +7,21 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkRequest;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.Pair;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
@@ -50,8 +58,11 @@ public class MainWear extends Activity {
         String[] lines = to.split("\n");
         debugText.setText(lines[lines.length-1]);
     }
+
     private void onConnectionStatus(boolean to){
-        setConnectedStatus(connecting, to);
+        this.runOnUiThread(() -> {
+            setConnectedStatus(connecting, to);
+        });
     };
 
     private void updateSensorStatus(){
@@ -73,6 +84,63 @@ public class MainWear extends Activity {
         }
     }
 
+
+    final static String CONN_DATA = "CONNECTION_DATA_PREF";
+
+    public static SharedPreferences get_prefs(Context c){
+        return c.getSharedPreferences(CONN_DATA, Context.MODE_PRIVATE);
+    }
+
+    public SharedPreferences get_prefs(){
+        return get_prefs(this);
+    }
+
+    boolean isAutoDiscover = true;
+    private void onAutodiscoverChanged(View view){
+        binding.manualConnect.setVisibility(binding.autodiscover.isChecked() ? View.GONE : View.VISIBLE);
+        isAutoDiscover = binding.autodiscover.isChecked();
+    }
+
+    private Pair<String, Integer> getIpPort(){
+        String filtered_ip = String.valueOf(binding.editIpAddr.getText()).replaceAll("[^0-9\\.]", "");
+        int port = 6969;
+        try {
+            port = Integer.parseInt(String.valueOf(binding.editPort.getText()));
+        }catch(NumberFormatException ignored){}
+
+        binding.editIpAddr.setText(filtered_ip);
+        binding.editPort.setText(String.valueOf(port));
+
+        return new Pair<String, Integer>(filtered_ip, port);
+    }
+
+    private void load_prefs(){
+        SharedPreferences prefs = get_prefs();
+        binding.editIpAddr.setText(prefs.getString("ip", ""));
+        binding.editPort.setText(String.valueOf(prefs.getInt("port", 6969)));
+        binding.autodiscover.setChecked(prefs.getBoolean("autodiscover", true));
+
+        binding.gameRotationRadio.setChecked(prefs.getBoolean("game-c", false));
+        binding.magRotationRadio.setChecked(prefs.getBoolean("mag-c", false));
+    }
+
+    private void save_prefs(){
+        SharedPreferences prefs = get_prefs();
+        SharedPreferences.Editor editor = prefs.edit();
+
+        editor.putString("ip", String.valueOf(binding.editIpAddr.getText()));
+        try {
+            editor.putInt("port", Integer.parseInt(String.valueOf(binding.editPort.getText())));
+        }catch(NumberFormatException ignored){}
+
+        editor.putBoolean("autodiscover", binding.autodiscover.isChecked());
+
+        editor.putBoolean("game-c", binding.gameRotationRadio.isChecked());
+        editor.putBoolean("mag-c", binding.magRotationRadio.isChecked());
+
+        editor.apply();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -81,7 +149,9 @@ public class MainWear extends Activity {
 
         updateSensorStatus();
 
-        binding.connectButton.setOnTouchListener(this::onConnectTouch);
+        binding.connectButton.setOnClickListener(this::connectToWifiAndRun);
+        binding.autodiscover.setOnClickListener(this::onAutodiscoverChanged);
+
         debugText = binding.debugText;
 
         setContentView(binding.getRoot());
@@ -92,11 +162,16 @@ public class MainWear extends Activity {
         LocalBroadcastManager.getInstance(this).registerReceiver(logReceiver, new IntentFilter("info-log"));
         LocalBroadcastManager.getInstance(this).registerReceiver(logReceiver, new IntentFilter("cya-ded"));
         LocalBroadcastManager.getInstance(this).registerReceiver(logReceiver, new IntentFilter("pls-let-me-die"));
+
+        load_prefs();
+        onAutodiscoverChanged(null);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        save_prefs();
+
         doBinding(false);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(logReceiver);
     }
@@ -186,15 +261,6 @@ public class MainWear extends Activity {
 
 
     private void connect(String ip, int port, boolean mag){
-        System.out.println("Connect calleded");
-        if((service_v != null) && (service_v.is_running())){
-            onSetStatus("Killing service...");
-            Intent intent = new Intent("kill-ze-service");
-            this.sendBroadcast(intent);
-            return;
-        }
-
-
         onConnectionStatus(true);
 
         Intent mainIntent = new Intent(this, TrackingService.class);
@@ -218,21 +284,36 @@ public class MainWear extends Activity {
 
             debugText.setText(R.string.searching);
 
-            AutoDiscoverer.DiscoveryResult result = null;
-            for(int i=0; i<5; i++) {
-                result = AutoDiscoverer.attempt_discover(1000);
-                if(result.found) break;
+            if(isAutoDiscover) {
+                AutoDiscoverer.DiscoveryResult result = null;
+                for (int i = 0; i < 5; i++) {
+                    result = AutoDiscoverer.attempt_discover(1000);
+                    if (result != null && result.found) break;
+                }
+
+                if (result == null || !result.found) {
+                    debugText.setText(R.string.not_found);
+                    return;
+                }
+
+                server_found = true;
+                debugText.setText("Connect to " + result.server_address.toString() + ":" + String.valueOf(result.port));
+
+                // save for future
+                binding.editIpAddr.setText(result.server_address.toString());
+                binding.editPort.setText(String.valueOf(result.port));
+
+                this.connect(result.server_address.toString(), result.port, use_mag);
+            }else{
+                Pair<String, Integer> ipPort = getIpPort();
+                if(ipPort.first.length() < 3){
+                    debugText.setText("Please enter valid IP");
+                    return;
+                }
+
+                server_found = true;
+                this.connect(ipPort.first, ipPort.second, use_mag);
             }
-
-            if (result == null || !result.found) {
-                debugText.setText(R.string.not_found);
-                return;
-            }
-
-            server_found = true;
-            debugText.setText("Connect to " + result.server_address.toString() + ":" + String.valueOf(result.port));
-
-            this.connect(result.server_address.toString(), result.port, use_mag);
         }finally{
             connecting_lock.unlock();
             boolean finalServer_found = server_found;
@@ -242,29 +323,10 @@ public class MainWear extends Activity {
         }
     }
 
-    private long pressedDownTime = 0;
-    private boolean onConnectTouch(View v, MotionEvent event){
-        System.out.println("Touch " + event.toString());
-        switch(event.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-                pressedDownTime = System.currentTimeMillis();
-                return true;
-            case MotionEvent.ACTION_UP: {
-                long diff = System.currentTimeMillis() - pressedDownTime;
-                if (diff > 1000) {
-                    onConnectHold(v);
-                }else{
-                    onConnectClick(v);
-                }
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void onConnectClick(View view) {
+    private int debounce_wifi = 0;
+    private boolean wifi_acquired = true;
+    private void connectToWifiAndRun(View view){
         if(dead_no_sensors) return;
-
 
         if((service_v != null) && (service_v.is_running())){
             onSetStatus("Killing service...");
@@ -275,20 +337,44 @@ public class MainWear extends Activity {
             return;
         }
 
+        if(debounce_wifi > 0 && !wifi_acquired){
+            this.startActivity(new Intent("com.google.android.clockwork.settings.connectivity.wifi.ADD_NETWORK_SETTINGS"));
+        }
+
+
+        debounce_wifi++;
+        int curr_deb = debounce_wifi;
+        wifi_acquired = false;
+
+
+        debugText.setText("Awaiting WiFi network...");
+
+        ConnectivityManager connectivityManager =  (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager.NetworkCallback callback = new ConnectivityManager.NetworkCallback() {
+            public void onAvailable(Network network) {
+                if(curr_deb != debounce_wifi) return;
+                wifi_acquired = true;
+
+                super.onAvailable(network);
+
+                // The Wi-Fi network has been acquired, bind it to use this network by default
+                connectivityManager.bindProcessToNetwork(network);
+
+                runOnUiThread(() -> {
+                    onConnectClick(view, network);
+                });
+            }
+        };
+        connectivityManager.requestNetwork(
+                new NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build(),
+                callback
+        );
+    }
+
+    private void onConnectClick(View view, Network network) {
         setConnectedStatus(true, false);
 
         Thread thread = new Thread(this::runConnectionProcedure);
-        thread.start();
-    }
-
-
-    private void onConnectHold(View view) {
-        if(dead_no_sensors) return;
-        debugText.setText("Debug connect to 192.168.32.50");
-
-        Thread thread = new Thread(() -> {
-            this.connect("192.168.32.50", 6969, true);
-        });
         thread.start();
     }
 }

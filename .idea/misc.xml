@@ -14,7 +14,11 @@
         <entry key="owoTrackMobile/src/main/res/layout/fragment_debug_log.xml" value="1.0166666666666666" />
         <entry key="owoTrackMobile/src/main/res/layout/fragment_home_menu.xml" value="1.0166666666666666" />
         <entry key="owoTrackMobile/src/main/res/layout/fragment_sensor_info.xml" value="1.10546875" />
+        <entry key="owoTrackMobile/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" value="1.184375" />
+        <entry key="owoTrackMobile/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" value="1.184375" />
         <entry key="owoTrackWear/src/main/res/layout/activity_mainwear.xml" value="0.75" />
+        <entry key="owoTrackWear/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" value="1.2375" />
+        <entry key="owoTrackWear/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" value="1.0" />
         <entry key="owotrackwear/src/main/res/layout/activity_mainwear.xml" value="0.4674479166666667" />
       </map>
     </option>

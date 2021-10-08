@@ -6,11 +6,11 @@ android {
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "org.owoTrack.Wear"
+        applicationId "org.ovrgyrotrackersync"
         minSdkVersion 25
         targetSdkVersion 31
-        versionCode 1
-        versionName "1.0"
+        versionCode 114
+        versionName "9.2"
 
     }
 

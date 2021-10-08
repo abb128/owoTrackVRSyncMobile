@@ -255,7 +255,7 @@ public class UDPGyroProviderClient {
             try {
                 retry_thread = new Thread(() -> {
                     try {
-                        for (int i = 0; i < 10; i++) {
+                        for (int i = 0; i < 30; i++) {
                             status.update("Connection died unexpectedly, trying to reconnect...");
 
 
@@ -274,7 +274,7 @@ public class UDPGyroProviderClient {
                             is_retrying = false;
 
                             if (!isConnected) {
-                                status.update("Failed to reconnect after 10 tries");
+                                status.update("Failed to reconnect after 30 tries");
                                 on_connection_death.run();
                             }
                         }
