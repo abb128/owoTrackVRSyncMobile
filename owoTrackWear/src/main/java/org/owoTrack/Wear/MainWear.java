@@ -29,6 +29,7 @@ import android.widget.TextView;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import org.owoTrack.AutoDiscoverer;
+import org.owoTrack.Handshaker;
 import org.owoTrack.TrackingService;
 import org.owoTrack.Wear.databinding.ActivityMainwearBinding;
 
@@ -54,15 +55,20 @@ public class MainWear extends Activity {
     private void onSetStatus(String to){;
         if(to.contains("Service not start")) return;
 
-        System.out.println("Status " + to);
         String[] lines = to.split("\n");
-        debugText.setText(lines[lines.length-1]);
+
+        this.runOnUiThread(() -> {
+            debugText.setText(lines[lines.length - 1]);
+        });
     }
 
+    private void onSetStatus(int rid){;
+        onSetStatus(getString(rid));
+    }
+
+
     private void onConnectionStatus(boolean to){
-        this.runOnUiThread(() -> {
-            setConnectedStatus(connecting, to);
-        });
+        setConnectedStatus(connecting, to);
     };
 
     private void updateSensorStatus(){
@@ -71,17 +77,19 @@ public class MainWear extends Activity {
         game_rotation_exists = (man.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR) != null);
         norm_rotation_exists = (man.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR) != null);
 
-        binding.gameRotationRadio.setEnabled(game_rotation_exists);
-        binding.magRotationRadio.setEnabled(norm_rotation_exists);
+        this.runOnUiThread(() -> {
+            binding.gameRotationRadio.setEnabled(game_rotation_exists);
+            binding.magRotationRadio.setEnabled(norm_rotation_exists);
 
-        dead_no_sensors = (!game_rotation_exists) && (!norm_rotation_exists);
-        if(dead_no_sensors){
-            binding.yesSensorsLayout.setVisibility(View.GONE);
-            binding.noSensorsLayout.setVisibility(View.VISIBLE);
-        }else{
-            binding.yesSensorsLayout.setVisibility(View.VISIBLE);
-            binding.noSensorsLayout.setVisibility(View.GONE);
-        }
+            dead_no_sensors = (!game_rotation_exists) && (!norm_rotation_exists);
+            if (dead_no_sensors) {
+                binding.yesSensorsLayout.setVisibility(View.GONE);
+                binding.noSensorsLayout.setVisibility(View.VISIBLE);
+            } else {
+                binding.yesSensorsLayout.setVisibility(View.VISIBLE);
+                binding.noSensorsLayout.setVisibility(View.GONE);
+            }
+        });
     }
 
 
@@ -108,20 +116,25 @@ public class MainWear extends Activity {
             port = Integer.parseInt(String.valueOf(binding.editPort.getText()));
         }catch(NumberFormatException ignored){}
 
-        binding.editIpAddr.setText(filtered_ip);
-        binding.editPort.setText(String.valueOf(port));
-
+        int finalPort = port;
+        this.runOnUiThread(() -> {
+            binding.editIpAddr.setText(filtered_ip);
+            binding.editPort.setText(String.valueOf(finalPort));
+        });
         return new Pair<String, Integer>(filtered_ip, port);
     }
 
     private void load_prefs(){
         SharedPreferences prefs = get_prefs();
-        binding.editIpAddr.setText(prefs.getString("ip", ""));
-        binding.editPort.setText(String.valueOf(prefs.getInt("port", 6969)));
-        binding.autodiscover.setChecked(prefs.getBoolean("autodiscover", true));
 
-        binding.gameRotationRadio.setChecked(prefs.getBoolean("game-c", false));
-        binding.magRotationRadio.setChecked(prefs.getBoolean("mag-c", false));
+        this.runOnUiThread(() -> {
+            binding.editIpAddr.setText(prefs.getString("ip", ""));
+            binding.editPort.setText(String.valueOf(prefs.getInt("port", 6969)));
+            binding.autodiscover.setChecked(prefs.getBoolean("autodiscover", true));
+
+            binding.gameRotationRadio.setChecked(prefs.getBoolean("game-c", false));
+            binding.magRotationRadio.setChecked(prefs.getBoolean("mag-c", false));
+        });
     }
 
     private void save_prefs(){
@@ -165,6 +178,8 @@ public class MainWear extends Activity {
 
         load_prefs();
         onAutodiscoverChanged(null);
+
+        ensureUUIDSet();
     }
 
     @Override
@@ -180,11 +195,13 @@ public class MainWear extends Activity {
         this.connecting = connecting;
         this.connected = connected;
 
-        binding.spinner.setVisibility((connecting && !connected) ? View.VISIBLE : View.GONE);
-        binding.connectButton.setVisibility((!connecting) ? View.VISIBLE : View.GONE);
-        binding.connectButton.setEnabled(!connecting);
+        this.runOnUiThread(() -> {
+            binding.spinner.setVisibility((connecting && !connected) ? View.VISIBLE : View.GONE);
+            binding.connectButton.setVisibility((!connecting) ? View.VISIBLE : View.GONE);
+            binding.connectButton.setEnabled(!connecting);
 
-        binding.connectButton.setText(connected ? R.string.disconnect : R.string.connect);
+            binding.connectButton.setText(connected ? R.string.disconnect : R.string.connect);
+        });
     }
 
     private boolean getMagUsage(){
@@ -275,6 +292,22 @@ public class MainWear extends Activity {
         }
     }
 
+    private void ensureUUIDSet(){
+        SharedPreferences prefs = getSharedPreferences("UUID", Context.MODE_PRIVATE);
+
+        long val = -1;
+        if(!prefs.contains("LongVal")){
+            SharedPreferences.Editor editor = prefs.edit();
+            val = (new java.util.Random()).nextLong();
+            editor.putLong("LongVal", val);
+            editor.apply();
+        }else{
+            val = prefs.getLong("LongVal", 1);
+        }
+
+        Handshaker.setMac(val);
+    }
+
     private void runConnectionProcedure(){
         if(!connecting_lock.tryLock()) return;
 
@@ -282,7 +315,7 @@ public class MainWear extends Activity {
         try {
             boolean use_mag = getMagUsage();
 
-            debugText.setText(R.string.searching);
+            onSetStatus(R.string.searching);
 
             if(isAutoDiscover) {
                 AutoDiscoverer.DiscoveryResult result = null;
@@ -292,22 +325,25 @@ public class MainWear extends Activity {
                 }
 
                 if (result == null || !result.found) {
-                    debugText.setText(R.string.not_found);
+                    onSetStatus(R.string.not_found);
                     return;
                 }
 
                 server_found = true;
-                debugText.setText("Connect to " + result.server_address.toString() + ":" + String.valueOf(result.port));
+                onSetStatus("Connect to " + result.server_address.toString() + ":" + String.valueOf(result.port));
 
                 // save for future
-                binding.editIpAddr.setText(result.server_address.toString());
-                binding.editPort.setText(String.valueOf(result.port));
+                AutoDiscoverer.DiscoveryResult finalResult = result;
+                runOnUiThread(() -> {
+                    binding.editIpAddr.setText(finalResult.server_address.toString());
+                    binding.editPort.setText(String.valueOf(finalResult.port));
+                });
 
                 this.connect(result.server_address.toString(), result.port, use_mag);
             }else{
                 Pair<String, Integer> ipPort = getIpPort();
                 if(ipPort.first.length() < 3){
-                    debugText.setText("Please enter valid IP");
+                    onSetStatus("Please enter valid IP");
                     return;
                 }
 
@@ -347,7 +383,7 @@ public class MainWear extends Activity {
         wifi_acquired = false;
 
 
-        debugText.setText("Awaiting WiFi network...");
+        onSetStatus("Awaiting WiFi network...");
 
         ConnectivityManager connectivityManager =  (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         ConnectivityManager.NetworkCallback callback = new ConnectivityManager.NetworkCallback() {

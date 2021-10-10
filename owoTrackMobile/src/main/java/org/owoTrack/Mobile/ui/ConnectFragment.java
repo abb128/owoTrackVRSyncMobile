@@ -68,8 +68,9 @@ public class ConnectFragment extends GenericBindingFragment {
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
         save_data();
+
+        super.onDestroy();
     }
 
     Button connect_button = null;
@@ -147,6 +148,8 @@ public class ConnectFragment extends GenericBindingFragment {
     }
 
     public void save_data(){
+        if(ipAddrTxt == null || portTxt == null || magBox == null) return;
+
         SharedPreferences prefs = get_prefs();
         SharedPreferences.Editor editor = prefs.edit();
 
