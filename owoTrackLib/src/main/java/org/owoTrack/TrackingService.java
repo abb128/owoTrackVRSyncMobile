@@ -113,23 +113,28 @@ public class TrackingService extends Service {
 
     private void lockWifi(){
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            try {
+                ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 
-            if(callback == null) {
-                callback = new ConnectivityManager.NetworkCallback() {
-                    public void onAvailable(Network network) {
-                        if(ignoreWifi) return;
+                if (callback == null) {
+                    callback = new ConnectivityManager.NetworkCallback() {
+                        public void onAvailable(Network network) {
+                            if (ignoreWifi) return;
 
-                        super.onAvailable(network);
-                        connectivityManager.bindProcessToNetwork(network);
-                    }
-                };
-            }
+                            super.onAvailable(network);
 
-            connectivityManager.requestNetwork(
-                    new NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build(),
-                    callback
-            );
+                            try {
+                                connectivityManager.bindProcessToNetwork(network);
+                            }catch(SecurityException ignored){}
+                        }
+                    };
+                }
+
+                connectivityManager.requestNetwork(
+                        new NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build(),
+                        callback
+                );
+            }catch(Exception ignored){}
         }
     }
 
@@ -137,11 +142,14 @@ public class TrackingService extends Service {
         ignoreWifi = true;
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-            connectivityManager.bindProcessToNetwork(null);
-            if(callback != null)
-                connectivityManager.unregisterNetworkCallback(callback);
-            callback = null;
+
+            try {
+                ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                connectivityManager.bindProcessToNetwork(null);
+                if (callback != null)
+                    connectivityManager.unregisterNetworkCallback(callback);
+                callback = null;
+            }catch(Exception ignored){}
 
         }
     }
