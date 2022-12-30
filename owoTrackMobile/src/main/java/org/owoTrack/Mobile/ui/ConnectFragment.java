@@ -90,7 +90,7 @@ public class ConnectFragment extends GenericBindingFragment {
 
         SharedPreferences prefs = get_prefs();
 
-        ipAddrTxt.setText(prefs.getString("ip_address", "192.168.24.150"));
+        ipAddrTxt.setText(prefs.getString("ip_address", ""));
         portTxt.setText(String.valueOf(prefs.getInt("port", 6969)));
         magBox.setChecked(prefs.getBoolean("magnetometer", true));
 

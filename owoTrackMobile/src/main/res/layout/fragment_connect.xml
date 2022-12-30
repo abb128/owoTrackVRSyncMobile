@@ -18,7 +18,7 @@
         android:ems="10"
         android:hint="IP address"
         android:inputType="textNoSuggestions"
-        android:text="192.168.24.150" />
+        android:text="" />
 
     <EditText
         android:id="@+id/editPort"
