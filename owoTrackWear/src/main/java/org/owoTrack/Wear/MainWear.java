@@ -293,16 +293,16 @@ public class MainWear extends Activity {
     }
 
     private void ensureUUIDSet(){
-        SharedPreferences prefs = getSharedPreferences("UUID", Context.MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences("FakeMACWear", Context.MODE_PRIVATE);
 
         long val = -1;
-        if(!prefs.contains("LongVal")){
+        if(!prefs.contains("FakeMACValueWear")){
             SharedPreferences.Editor editor = prefs.edit();
             val = (new java.util.Random()).nextLong();
-            editor.putLong("LongVal", val);
+            editor.putLong("FakeMACValueWear", val);
             editor.apply();
         }else{
-            val = prefs.getLong("LongVal", 1);
+            val = prefs.getLong("FakeMACValueWear", 1);
         }
 
         Handshaker.setMac(val);
