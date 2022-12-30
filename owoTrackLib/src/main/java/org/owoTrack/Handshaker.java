@@ -105,7 +105,7 @@ public class Handshaker {
 
             tries++;
             if(tries > 12){
-                throw new HandshakeFailException("Connection timed out. Ensure IP and port are correct, that the server is running and not blocked by Windows Firewall (try changing your network type to private in Windows, or running the firewall script) or blocked by router, and that you're connected to the same network (you may need to disable Mobile Data)");
+                throw new HandshakeFailException("Connection timed out. Ensure IP and port are correct, that the server is running and not blocked by Windows Firewall (try changing your network type to private in Windows) or blocked by router, and that you're connected to the same network (you may need to disable Mobile Data)");
             }
             try {
                 if(socket == null) throw new HandshakeFailException("Socket is null!");
@@ -146,7 +146,7 @@ public class Handshaker {
                     }
 
                     if(!sendSlimeExtensions){
-                        throw new HandshakeSuccessWithWarningException("Your overlay appears out-of-date with no non-fatal support for longer packet lengths, please update it");
+                        throw new HandshakeSuccessWithWarningException("Your server appears out-of-date with no non-fatal support for longer packet lengths, please update it");
                     }
 
                     return true;
@@ -154,7 +154,7 @@ public class Handshaker {
                     continue;
                 }
             } catch (PortUnreachableException e){
-                throw new HandshakeFailException("Port is unreachable. Ensure that you've entered the correct IP and port, that the driver is running and that you're on the same wifi network as the computer.");
+                throw new HandshakeFailException("Port is unreachable. Ensure that you've entered the correct IP and port, that the server is running and that you're on the same wifi network as the computer.");
             } catch (IOException e){
                 throw new HandshakeFailException("Handshake IO exception: " + e.toString());
             }
