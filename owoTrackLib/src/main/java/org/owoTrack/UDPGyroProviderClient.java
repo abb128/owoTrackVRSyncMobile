@@ -476,13 +476,14 @@ public class UDPGyroProviderClient {
         if(!isConnected()) return;
 
         int battery_level = getBatteryPercentage(service);
+        float battery = (float)battery_level / 100.0f;
 
         int len = 12 + 4;
 
         ByteBuffer buff = ByteBuffer.allocate(len);
         buff.putInt(UDPPackets.BATTERY_LEVEL);
         buff.putLong(packet_id++);
-        buff.putFloat((float)battery_level);
+        buff.putFloat(battery);
 
         sendPacket(buff, len);
     }
