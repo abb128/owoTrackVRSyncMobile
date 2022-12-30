@@ -133,7 +133,13 @@ public class UDPGyroProviderClient {
         }
     }
 
-    public void setTgt(String ip, int port){
+    public boolean setTgt(String ip, int port){
+        if(ip.length() == 0) {
+            status.update("Please enter your computer's IP address");
+            ip_addr = null;
+            return false;
+        }
+
         handshake_required = true;
         port_v = port;
         try {
@@ -141,13 +147,15 @@ public class UDPGyroProviderClient {
         } catch (UnknownHostException e){
             status.update("Invalid IP address. Please enter a valid IP address.");
             ip_addr = null;
-            return;
+            return false;
         } catch (Exception e) {
             status.update("Set IP: " + e.toString());
             e.printStackTrace();
             ip_addr = null;
-            return;
+            return false;
         }
+
+        return true;
     }
 
     public boolean try_handshake() {

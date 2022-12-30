@@ -77,10 +77,13 @@ public class TrackingService extends Service {
 
         try {
             Thread thread = new Thread(() -> {
-                client.setTgt(ip_address, port_no);
-                client.connect(on_death);
-                if (client == null || !client.isConnected()) {
+                if(!client.setTgt(ip_address, port_no)){
                     on_death.run();
+                }else{
+                    client.connect(on_death);
+                    if (client == null || !client.isConnected()) {
+                        on_death.run();
+                    }
                 }
             });
             thread.start();
