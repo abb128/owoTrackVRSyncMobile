@@ -16,6 +16,7 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import org.owoTrack.Mobile.MainActivity;
 import org.owoTrack.Mobile.R;
 import org.owoTrack.TrackingService;
 
@@ -88,15 +89,26 @@ public class ConnectFragment extends GenericBindingFragment {
         portTxt = curr_view.findViewById(R.id.editPort);
         magBox = curr_view.findViewById(R.id.magnetCheckbox);
 
-        SharedPreferences prefs = get_prefs();
 
-        ipAddrTxt.setText(prefs.getString("ip_address", ""));
-        portTxt.setText(String.valueOf(prefs.getInt("port", 6969)));
-        magBox.setChecked(prefs.getBoolean("magnetometer", true));
+        if(!MainActivity.hasAnySensorsAtAll()) {
+            connect_button.setEnabled(false);
+            ipAddrTxt.setEnabled(false);
+            portTxt.setEnabled(false);
+            magBox.setEnabled(false);
 
-        connect_button.setOnClickListener(v -> onConnect());
+            TextView statusText = curr_view.findViewById(R.id.statusText);
+            statusText.setText(R.string.sensors_missing_all);
+        }else {
+            SharedPreferences prefs = get_prefs();
 
-        onConnectionStatus(TrackingService.isInstanceCreated());
+            ipAddrTxt.setText(prefs.getString("ip_address", ""));
+            portTxt.setText(String.valueOf(prefs.getInt("port", 6969)));
+            magBox.setChecked(prefs.getBoolean("magnetometer", true));
+
+            connect_button.setOnClickListener(v -> onConnect());
+
+            onConnectionStatus(TrackingService.isInstanceCreated());
+        }
 
         return curr_view;
     }
@@ -148,6 +160,8 @@ public class ConnectFragment extends GenericBindingFragment {
     }
 
     public void save_data(){
+        if(!MainActivity.hasAnySensorsAtAll()) return;
+
         if(ipAddrTxt == null || portTxt == null || magBox == null) return;
 
         SharedPreferences prefs = get_prefs();

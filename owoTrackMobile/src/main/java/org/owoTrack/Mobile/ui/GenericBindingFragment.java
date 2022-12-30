@@ -13,6 +13,7 @@ import android.view.View;
 import androidx.fragment.app.Fragment;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import org.owoTrack.Mobile.MainActivity;
 import org.owoTrack.TrackingService;
 
 import static android.content.Context.BIND_AUTO_CREATE;
@@ -88,6 +89,7 @@ public abstract class GenericBindingFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if(!MainActivity.hasAnySensorsAtAll()) return;
         doBinding(false);
         LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(logReceiver);
     }
@@ -96,6 +98,7 @@ public abstract class GenericBindingFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if(!MainActivity.hasAnySensorsAtAll()) return;
 
         doBinding(true);
 

@@ -42,7 +42,7 @@ public class Handshaker {
         return pseudo_mac;
     }
 
-    private static void insert_slime_info(ByteBuffer buff) {
+    public static void insert_slime_info(ByteBuffer buff, boolean discovery) {
         final int boardType = 0;
         final int imuType = 0;
         final int mcuType = 0;
@@ -51,7 +51,8 @@ public class Handshaker {
 
         final int firmwareBuild = 8;
 
-        final byte[] firmware = {'o', 'w', 'o', 'T', 'r', 'a', 'c', 'k', '8'}; // 9 bytes
+        final byte first_byte = (byte)(discovery ? 'D' : 'o');
+        final byte[] firmware = {first_byte, 'w', 'o', 'T', 'r', 'a', 'c', 'k', '8'}; // 9 bytes
 
         buff.putInt(boardType); // 4 bytes
         buff.putInt(imuType);   // 4 bytes
@@ -97,7 +98,7 @@ public class Handshaker {
 
             if(sendSlimeExtensions) {
                 try {
-                    insert_slime_info(handshake_buff); // 36 extra bytes
+                    insert_slime_info(handshake_buff, false); // 36 extra bytes
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

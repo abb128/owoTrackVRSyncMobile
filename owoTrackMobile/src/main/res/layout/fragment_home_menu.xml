@@ -21,7 +21,7 @@
             android:textSize="24sp" />
 
         <TextView
-            android:id="@+id/textView3"
+            android:id="@+id/sleepWarningText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/sleep_warning" />
@@ -36,16 +36,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:baselineAligned="false"
-            android:orientation="vertical">
-
-            <androidx.fragment.app.FragmentContainerView
-                android:id="@+id/sensorfragment_gyro"
-                android:name="org.owoTrack.Mobile.ui.SensorInfoFragment"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                app:sensorID="@integer/gyroscope"
-                app:sensorName="Gyroscope" />
+            android:orientation="vertical"
+            android:paddingTop="4pt">
 
             <androidx.fragment.app.FragmentContainerView
                 android:id="@+id/sensorfragment_gamerotation"
@@ -54,7 +46,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 app:sensorID="@integer/game_rotation_vector"
-                app:sensorName="Game Rotation" />
+                app:sensorName="Rotation Sensor" />
 
             <androidx.fragment.app.FragmentContainerView
                 android:id="@+id/sensorfragment_georotation"
@@ -63,17 +55,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 app:sensorID="@integer/rotation_vector"
-                app:sensorName="Geomagnetic Rotation" />
-
-            <androidx.fragment.app.FragmentContainerView
-                android:id="@+id/sensorfragment_lacc"
-                android:name="org.owoTrack.Mobile.ui.SensorInfoFragment"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                app:sensorID="@integer/linear_acceleration"
-                app:sensorName="Linear Acceleration" />
-
+                app:sensorName="Magnetometer" />
 
 
         </LinearLayout>

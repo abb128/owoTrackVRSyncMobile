@@ -56,7 +56,7 @@ public class GyroListener implements SensorEventListener {
             RotationSensor = sensorManager.getDefaultSensor(ROTATION_SENSOR_TYPE);
             if(RotationSensor == null){
                 logger.update("Could not find any suitable rotation sensor!");
-                throw new Exception("Failed to find sensors, see log for more details");
+                throw new Exception("Your device does not have the required sensors and is unsupported.");
             }
         }
 

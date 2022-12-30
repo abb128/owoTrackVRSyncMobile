@@ -26,6 +26,10 @@ public class MainActivity extends AppCompatActivity {
         return sensor_exist[sensor];
     }
 
+    public static boolean hasAnySensorsAtAll(){
+        return getSensorExists(1) || getSensorExists(2);
+    }
+
 
 
     private static String missingSensorMessage = "";
@@ -51,15 +55,7 @@ public class MainActivity extends AppCompatActivity {
 
         missingSensorMessage = "";
 
-        if(!getSensorExists(1)){
-            missingSensorMessage += getString(R.string.sensors_missing_rotation_vector) + " ";
-        }
-
-        if(!getSensorExists(3)){
-            missingSensorMessage += getString(R.string.sensors_missing_linear_accel);
-        }
-
-        if((!getSensorExists(1)) && (!getSensorExists(2))){
+        if(!hasAnySensorsAtAll()){
             missingSensorMessage = getString(R.string.sensors_missing_all);
         }
 
@@ -99,6 +95,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void runDiscovery(){
+        if(!hasAnySensorsAtAll()) return;
         if(!AutoDiscoverer.discoveryStillNecessary) return;
 
         try {

@@ -10,20 +10,8 @@
 
     <string name="remote_service_started" />
 
-
-
-
-    <string name="sensors_missing_rotation_vector">
-        Your device lacks a rotation vector sensor.
-        Fallback to game rotation vector will be used, but you will experience yaw drift.
-    </string>
-
-    <string name="sensors_missing_linear_accel">
-        Linear accelerometer currently isnt necessary.
-    </string>
-
     <string name="sensors_missing_all">
-        ALL REQUIRED SENSORS ARE UNAVAILABLE! Sorry, but this app will not work on your device, as
-        you must at least have a game rotation vector.
+        Unfortunately, your phone lacks the necessary sensors for this app to function.
+        Please try another phone, or consider building DIY Slime trackers.
     </string>
 </resources>

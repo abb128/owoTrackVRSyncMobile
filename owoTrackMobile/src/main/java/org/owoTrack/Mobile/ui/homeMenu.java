@@ -31,6 +31,11 @@ public class homeMenu extends Fragment {
         TextView sensorWarning = v.findViewById(R.id.sensorWarningTextView);
         sensorWarning.setText(MainActivity.getSensorText());
 
+        if(!MainActivity.hasAnySensorsAtAll()){
+            TextView sleepWarning = v.findViewById(R.id.sleepWarningText);
+            sleepWarning.setText("");
+        }
+
         return v;
     }
 }
