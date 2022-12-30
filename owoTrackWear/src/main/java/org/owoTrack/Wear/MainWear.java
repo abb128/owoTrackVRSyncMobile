@@ -318,28 +318,7 @@ public class MainWear extends Activity {
             onSetStatus(R.string.searching);
 
             if(isAutoDiscover) {
-                AutoDiscoverer.DiscoveryResult result = null;
-                for (int i = 0; i < 5; i++) {
-                    result = AutoDiscoverer.attempt_discover(1000);
-                    if (result != null && result.found) break;
-                }
-
-                if (result == null || !result.found) {
-                    onSetStatus(R.string.not_found);
-                    return;
-                }
-
-                server_found = true;
-                onSetStatus("Connect to " + result.server_address.toString() + ":" + String.valueOf(result.port));
-
-                // save for future
-                AutoDiscoverer.DiscoveryResult finalResult = result;
-                runOnUiThread(() -> {
-                    binding.editIpAddr.setText(finalResult.server_address.toString());
-                    binding.editPort.setText(String.valueOf(finalResult.port));
-                });
-
-                this.connect(result.server_address.toString(), result.port, use_mag);
+                this.connect("255.255.255.255", 6969, use_mag);
             }else{
                 Pair<String, Integer> ipPort = getIpPort();
                 if(ipPort.first.length() < 3){

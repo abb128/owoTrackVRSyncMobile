@@ -260,7 +260,7 @@ public class TrackingService extends Service {
         Notification notification = new NotificationCompat.Builder(this, "NOTIFICATION_CHANNEL_ID")
                 .setContentTitle("owoTrackVR")
                 .setTicker("owoTrackVR")
-                .setContentText("Currently connected to " + ip_address)
+                .setContentText("owoTrack service is running")
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .addAction(0, "Stop", pendingIntent)
                 .setOngoing(true).build();

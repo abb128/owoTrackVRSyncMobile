@@ -69,6 +69,7 @@ public class ConnectFragment extends GenericBindingFragment {
 
     @Override
     public void onDestroy() {
+        get_prefs().unregisterOnSharedPreferenceChangeListener(listener);
         save_data();
 
         super.onDestroy();
@@ -105,7 +106,9 @@ public class ConnectFragment extends GenericBindingFragment {
             portTxt.setText(String.valueOf(prefs.getInt("port", 6969)));
             magBox.setChecked(prefs.getBoolean("magnetometer", true));
 
-            connect_button.setOnClickListener(v -> onConnect());
+            connect_button.setOnClickListener(v -> onConnect(false));
+
+            prefs.registerOnSharedPreferenceChangeListener(listener);
 
             onConnectionStatus(TrackingService.isInstanceCreated());
         }
@@ -136,7 +139,7 @@ public class ConnectFragment extends GenericBindingFragment {
         return magBox.isChecked();
     }
 
-    private void onConnect(){
+    private void onConnect(boolean auto){
         if((service_v != null) && (service_v.is_running())){
             onSetStatus("Killing service...");
             Intent intent = new Intent("kill-ze-service");
@@ -148,7 +151,12 @@ public class ConnectFragment extends GenericBindingFragment {
         onConnectionStatus(true);
 
         Intent mainIntent = new Intent(getContext(), TrackingService.class);
-        mainIntent.putExtra("ipAddrTxt", get_ip_address());
+        if(auto) {
+            mainIntent.putExtra("ipAddrTxt", "255.255.255.255");
+        }else {
+            mainIntent.putExtra("ipAddrTxt", get_ip_address());
+        }
+
         mainIntent.putExtra("port_no", get_port());
         mainIntent.putExtra("magnetometer", get_mag());
 
@@ -174,4 +182,15 @@ public class ConnectFragment extends GenericBindingFragment {
         editor.apply();
     }
 
+    SharedPreferences.OnSharedPreferenceChangeListener listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+        @Override
+        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, java.lang.String s) {
+            if(s.equals("ip_address")) {
+                ipAddrTxt.setText(sharedPreferences.getString(s, ""));
+            }
+            if(s.equals("port")) {
+                portTxt.setText(String.valueOf(sharedPreferences.getInt(s, 6969)));
+            }
+        }
+    };
 }

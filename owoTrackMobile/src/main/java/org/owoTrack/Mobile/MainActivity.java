@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
         Handshaker.setMac(val);
     }
 
-    public NavController contr;
+    public static NavController contr;
 
     private boolean connectGetMag(String ip, int port){
         SharedPreferences prefs = ConnectFragment.get_prefs(this);

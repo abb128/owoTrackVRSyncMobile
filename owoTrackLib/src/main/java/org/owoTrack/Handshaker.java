@@ -9,12 +9,6 @@ import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-class HandshakeSuccessWithWarningException extends Exception {
-    public HandshakeSuccessWithWarningException(String s) {
-        super(s);
-    }
-}
-
 class HandshakeFailException extends Exception {
     public HandshakeFailException(String s){
         super(s);
@@ -22,6 +16,32 @@ class HandshakeFailException extends Exception {
 }
 
 public class Handshaker {
+    public static class HandshakeResult {
+        public boolean success;
+
+        public boolean had_to_rediscover;
+        public InetAddress server_address;
+        public int port;
+
+        HandshakeResult(){}
+
+        public static Handshaker.HandshakeResult none(){
+            Handshaker.HandshakeResult result = new Handshaker.HandshakeResult();
+            result.success = false;
+
+            return result;
+        }
+
+        public static Handshaker.HandshakeResult some(InetAddress srv, int port, boolean had_to_rediscover){
+            Handshaker.HandshakeResult result = new Handshaker.HandshakeResult();
+            result.success = true;
+            result.server_address = srv;
+            result.port = port;
+            result.had_to_rediscover = had_to_rediscover;
+
+            return result;
+        }
+    }
 
     // Android doesn't allow getting MAC address anymore, so we fake one
     private static byte[] pseudo_mac = new byte[]{0, 69, 0, 0, 0, 0};
@@ -42,7 +62,7 @@ public class Handshaker {
         return pseudo_mac;
     }
 
-    public static void insert_slime_info(ByteBuffer buff, boolean discovery) {
+    public static void insert_slime_info(ByteBuffer buff) {
         final int boardType = 0;
         final int imuType = 0;
         final int mcuType = 0;
@@ -51,8 +71,7 @@ public class Handshaker {
 
         final int firmwareBuild = 8;
 
-        final byte first_byte = (byte)(discovery ? 'D' : 'o');
-        final byte[] firmware = {first_byte, 'w', 'o', 'T', 'r', 'a', 'c', 'k', '8'}; // 9 bytes
+        final byte[] firmware = {'o', 'w', 'o', 'T', 'r', 'a', 'c', 'k', '8'}; // 9 bytes
 
         buff.putInt(boardType); // 4 bytes
         buff.putInt(imuType);   // 4 bytes
@@ -73,7 +92,7 @@ public class Handshaker {
         buff.put((byte)0xFF); // top it off
     }
 
-    public static boolean try_handshake(DatagramSocket socket, boolean strict, InetAddress ip, int port) throws HandshakeSuccessWithWarningException, HandshakeFailException {
+    public static HandshakeResult try_handshake(DatagramSocket socket, InetAddress ip, int port) throws HandshakeFailException {
         //if(ip.toString().endsWith(".255")) return true;
 
         byte[] buffer = new byte[64];
@@ -81,6 +100,7 @@ public class Handshaker {
 
 
         int tries = 0;
+        boolean tryBroadcast = false;
         while(true) {
             int len = 12;
 
@@ -89,7 +109,7 @@ public class Handshaker {
             // supported was around 28 bytes. to maintain backwards
             // compatibility the slime extensions are not sent after a
             // certain number of failures
-            boolean sendSlimeExtensions = (tries < 7);
+            boolean sendSlimeExtensions = (tries < 10);
             if(sendSlimeExtensions) len += 36 + 9;
 
             ByteBuffer handshake_buff = ByteBuffer.allocate(len);
@@ -98,25 +118,33 @@ public class Handshaker {
 
             if(sendSlimeExtensions) {
                 try {
-                    insert_slime_info(handshake_buff, false); // 36 extra bytes
+                    insert_slime_info(handshake_buff); // 36 extra bytes
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
 
             tries++;
+            tryBroadcast = tryBroadcast || (tries > 4);
             if(tries > 12){
-                throw new HandshakeFailException("Connection timed out. Ensure IP and port are correct, that the server is running and not blocked by Windows Firewall (try changing your network type to private in Windows) or blocked by router, and that you're connected to the same network (you may need to disable Mobile Data)");
+                throw new HandshakeFailException("Connection failed. Ensure IP and port are correct, that the server is running and not blocked by Windows Firewall (try changing your network type to private in Windows) or blocked by router, and that you're connected to the same network (you may need to disable Mobile Data)");
             }
+
             try {
                 if(socket == null) throw new HandshakeFailException("Socket is null!");
-                socket.send(new DatagramPacket(handshake_buff.array(), len, ip, port));
+
+                if(!tryBroadcast) {
+                    socket.send(new DatagramPacket(handshake_buff.array(), len, ip, port));
+                }else{
+                    socket.disconnect();
+                    socket.setBroadcast(true);
+                    InetAddress broadcast_address = InetAddress.getByName("255.255.255.255");
+                    socket.send(new DatagramPacket(handshake_buff.array(), len, broadcast_address, 6969));
+                }
 
                 try {
                     socket.setSoTimeout(250);
                     socket.receive(handshake_receive);
-
-                    if(!strict) return true;
 
                     if (buffer[0] != 3) {
                         throw new HandshakeFailException("Handshake failed, the server did not respond correctly. Ensure everything is up-to-date and that the port is correct.");
@@ -146,16 +174,19 @@ public class Handshaker {
                             + "\nPlease make sure everything is up to date.");
                     }
 
-                    if(!sendSlimeExtensions){
-                        throw new HandshakeSuccessWithWarningException("Your server appears out-of-date with no non-fatal support for longer packet lengths, please update it");
+                    boolean had_to_rediscover = (handshake_receive.getAddress() != ip) || (handshake_receive.getPort() != port);
+                    if(tryBroadcast && had_to_rediscover) {
+                        socket.connect(handshake_receive.getAddress(), handshake_receive.getPort());
+                        socket.setBroadcast(false);
                     }
-
-                    return true;
+                    return HandshakeResult.some(handshake_receive.getAddress(), handshake_receive.getPort(), had_to_rediscover);
                 } catch (SocketTimeoutException e) {
                     continue;
                 }
             } catch (PortUnreachableException e){
-                throw new HandshakeFailException("Port is unreachable. Ensure that you've entered the correct IP and port, that the server is running and that you're on the same wifi network as the computer.");
+                //throw new HandshakeFailException("Port is unreachable. Ensure that you've entered the correct IP and port, that the server is running and that you're on the same wifi network as the computer.");
+                tryBroadcast = true;
+                continue;
             } catch (IOException e){
                 throw new HandshakeFailException("Handshake IO exception: " + e.toString());
             }

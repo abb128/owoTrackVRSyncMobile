@@ -4,6 +4,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.VibrationEffect;
@@ -62,7 +63,7 @@ public class UDPGyroProviderClient {
 
     private DatagramSocket socket;
 
-    private boolean did_handshake_succeed;
+    private Handshaker.HandshakeResult handshake_result;
 
     private AppStatus status;
 
@@ -78,8 +79,6 @@ public class UDPGyroProviderClient {
     long last_heartbeat_time = 0;
 
     static long last_kill_time = 0;
-
-    boolean handshake_required = true;
 
     // from https://stackoverflow.com/questions/3291655/get-battery-level-and-state-in-android
     public static int getBatteryPercentage(Context context) {
@@ -135,12 +134,9 @@ public class UDPGyroProviderClient {
 
     public boolean setTgt(String ip, int port){
         if(ip.length() == 0) {
-            status.update("Please enter your computer's IP address");
-            ip_addr = null;
-            return false;
+            ip = "255.255.255.255";
         }
 
-        handshake_required = true;
         port_v = port;
         try {
             ip_addr = InetAddress.getByName(ip);
@@ -160,20 +156,15 @@ public class UDPGyroProviderClient {
 
     public boolean try_handshake() {
         try {
-            did_handshake_succeed = Handshaker.try_handshake(socket, handshake_required, ip_addr, port_v);
-        } catch (HandshakeSuccessWithWarningException f){
-            did_handshake_succeed = true;
-            handshake_required = false;
-            status.update("WARNING: " + f.getMessage());
-            return true;
+            status.update("Attempting to connect to server...");
+            handshake_result = Handshaker.try_handshake(socket, ip_addr, port_v);
         } catch (HandshakeFailException e) {
             e.printStackTrace();
-            did_handshake_succeed = false;
             status.update(e.getMessage());
+            return false;
         }
 
-        handshake_required = !did_handshake_succeed;
-        return did_handshake_succeed;
+        return (handshake_result != null) && (handshake_result.success);
     }
 
     private boolean isBroadcasting(){
@@ -184,6 +175,18 @@ public class UDPGyroProviderClient {
 
     private Runnable on_connection_death;
 
+    private void save_to_prefs(){
+        final String CONN_DATA = "CONNECTION_DATA_PREF";
+        SharedPreferences prefs = service.getSharedPreferences(CONN_DATA, Context.MODE_PRIVATE);
+
+        SharedPreferences.Editor editor = prefs.edit();
+
+        editor.putString("ip_address", ip_addr.getHostAddress());
+        editor.putInt("port", port_v);
+
+        editor.apply();
+    }
+
     Thread listening_thread = null;
     Thread sending_thread = null;
     public boolean connect(Runnable on_death){
@@ -192,13 +195,11 @@ public class UDPGyroProviderClient {
         on_connection_death = on_death;
         socket.disconnect();
         packet_id = 0;
-        did_handshake_succeed = false;
         if(ip_addr == null){
             return false;
         }
 
         if(!isBroadcasting()) {
-            status.update("Attempting connection...");
             try {
                 socket.connect(new InetSocketAddress(ip_addr, port_v));
             } catch (Exception e) {
@@ -211,8 +212,12 @@ public class UDPGyroProviderClient {
         if(!try_handshake()){
             return false;
         }
-        did_handshake_succeed = true;
-        isConnected = isBroadcasting() ? true : socket.isConnected();
+
+        ip_addr = handshake_result.server_address;
+        port_v = handshake_result.port;
+        save_to_prefs();
+
+        isConnected = true;
         if(isConnected){
             last_heartbeat_time = System.currentTimeMillis();
             last_packetsend_time = last_heartbeat_time;
@@ -249,7 +254,7 @@ public class UDPGyroProviderClient {
 
         if(!unexpected) on_connection_death.run();
         isConnected = false;
-        did_handshake_succeed = false;
+        handshake_result = null;
 
         if(listening_thread != null) listening_thread.interrupt();
         if(sending_thread != null) sending_thread.interrupt();
@@ -297,7 +302,7 @@ public class UDPGyroProviderClient {
     public boolean isConnected(){
         if(socket == null) return false;
 
-        if(!(isConnected && did_handshake_succeed))
+        if(!(isConnected && (handshake_result != null) && (handshake_result.success)))
             return false;
 
         long time = System.currentTimeMillis();
