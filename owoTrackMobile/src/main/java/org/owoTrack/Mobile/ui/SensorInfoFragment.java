@@ -52,10 +52,10 @@ public class SensorInfoFragment extends Fragment {
 
         if(MainActivity.getSensorExists(sensorID)){
             ((ImageView) main_view.findViewById(R.id.radio_btn)).setImageResource(R.drawable.not_missing);
-            ((TextView) main_view.findViewById(R.id.sensor_name)).setText(sensorName + " sensor");
+            ((TextView) main_view.findViewById(R.id.sensor_name)).setText(sensorName);
         }else{
             ((ImageView) main_view.findViewById(R.id.radio_btn)).setImageResource(R.drawable.error_missing);
-            ((TextView) main_view.findViewById(R.id.sensor_name)).setText("Missing: " + sensorName + " sensor");
+            ((TextView) main_view.findViewById(R.id.sensor_name)).setText("Missing: " + sensorName);
         }
 
         return main_view;

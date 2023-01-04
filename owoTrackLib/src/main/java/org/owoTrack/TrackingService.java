@@ -255,7 +255,7 @@ public class TrackingService extends Service {
         registerReceiver(broadcastReceiver, new IntentFilter("kill-ze-service"));
 
         Intent intent = new Intent("kill-ze-service");
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
 
         Notification notification = new NotificationCompat.Builder(this, "NOTIFICATION_CHANNEL_ID")
                 .setContentTitle("owoTrackVR")
