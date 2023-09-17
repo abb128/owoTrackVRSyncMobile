@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 class UDPPackets {
@@ -194,7 +195,7 @@ public class UDPGyroProviderClient {
 
         on_connection_death = on_death;
         socket.disconnect();
-        packet_id = 0;
+        packet_id.set(0);
         if(ip_addr == null){
             return false;
         }
@@ -425,7 +426,7 @@ public class UDPGyroProviderClient {
 
     private ArrayBlockingQueue<DatagramPacket> packets = new ArrayBlockingQueue<DatagramPacket>(64);
 
-    private long packet_id = 0;
+    private AtomicLong packet_id = new AtomicLong(0);
 
     int failed_in_series = 0;
     long last_error = 0;
@@ -495,7 +496,7 @@ public class UDPGyroProviderClient {
 
         ByteBuffer buff = ByteBuffer.allocate(len);
         buff.putInt(UDPPackets.BATTERY_LEVEL);
-        buff.putLong(packet_id++);
+        buff.putLong(packet_id.getAndIncrement());
         buff.putFloat(battery);
 
         sendPacket(buff, len);
@@ -508,16 +509,13 @@ public class UDPGyroProviderClient {
 
         ByteBuffer buff = ByteBuffer.allocate(bytes);
         buff.putInt(msg_type);
-        buff.putLong(packet_id);
+        buff.putLong(packet_id.getAndIncrement());
 
         for (int i = 0; i < len; i++) {
             buff.putFloat(floats[i]);
         }
 
-        if(!sendPacket(buff, bytes)) return;
-
-        packet_id++;
-
+        sendPacket(buff, bytes);
     }
 
 
@@ -531,7 +529,7 @@ public class UDPGyroProviderClient {
 
         ByteBuffer buff = ByteBuffer.allocate(len);
         buff.putInt(UDPPackets.SEND_MAG_STATUS);
-        buff.putLong(packet_id++);
+        buff.putLong(packet_id.getAndIncrement());
         buff.putChar(enabled ? 'y' : 'n');
 
         sendPacket(buff, len);
@@ -542,7 +540,7 @@ public class UDPGyroProviderClient {
         int len = 12 + 1;
         ByteBuffer buff = ByteBuffer.allocate(len);
         buff.putInt(UDPPackets.BUTTON_PUSHED);
-        buff.putLong(packet_id++);
+        buff.putLong(packet_id.getAndIncrement());
 
         sendPacket(buff, len);
     }
