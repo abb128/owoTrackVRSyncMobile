@@ -7,8 +7,8 @@
     <string name="hello_world">Hello Square World!</string>
     <string name="appTitle">owoTrack</string>
     <string name="sensor_select">Pick sensor</string>
-    <string name="mag_rotation">Mag. Rotation</string>
-    <string name="game_rotation">Game Rotation</string>
+    <string name="mag_rotation">Standard + Mag.</string>
+    <string name="game_rotation">Standard</string>
     <string name="connect">Connect</string>
 
     <string name="searching">Searching…</string>
@@ -19,9 +19,9 @@
     <string name="error_no_sensors">No compatible sensors have been found on this watch :(</string>
 
     <string name="disconnect">Disconnect</string>
-    <string name="autodiscover">Autodiscover</string>
+    <string name="autodiscover">Auto Discover</string>
     <string name="ip_address">IP address</string>
     <string name="connection">Connection</string>
     <string name="port">Port</string>
-    <string name="you_will_be_automatically_connected_to_wifi">You will be automatically connected to WiFi</string>
+    <string name="you_will_be_automatically_connected_to_wifi">You will be connected to WiFi</string>
 </resources>

@@ -55,6 +55,14 @@ public class MainWear extends Activity {
     private void onSetStatus(String to){;
         if(to.contains("Service not start")) return;
 
+        if(to.contains("Ensure IP and port are correct, that the server is running and not blocked")) {
+            if(isAutoDiscover) {
+                to = "Failed to connect. Ensure server is running. Try manually entering IP.";
+            } else {
+                to = "Failed to connect. Ensure IP is correct and server is running.";
+            }
+        }
+
         String[] lines = to.split("\n");
 
         this.runOnUiThread(() -> {

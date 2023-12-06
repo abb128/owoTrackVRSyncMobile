@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="@dimen/box_inset_layout_padding"
     tools:context=".MainWear"
+    android:scrollbars="vertical"
     tools:deviceIds="wear">
+    <requestFocus />
 
     <androidx.wear.widget.BoxInsetLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content">
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -150,6 +152,7 @@
                         android:id="@+id/debugText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:paddingBottom="32sp"
                         android:text="@string/you_will_be_automatically_connected_to_wifi" />
                 </LinearLayout>
 
@@ -172,4 +175,4 @@
         </LinearLayout>
     </FrameLayout>
     </androidx.wear.widget.BoxInsetLayout>
-</androidx.core.widget.NestedScrollView>
+</ScrollView>
