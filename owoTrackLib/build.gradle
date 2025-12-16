@@ -38,9 +38,6 @@ dependencies {
     implementation "androidx.navigation:navigation-fragment:$nav_version"
     implementation "androidx.navigation:navigation-ui:$nav_version"
 
-    // Feature module Support
-    implementation "androidx.navigation:navigation-dynamic-features-fragment:$nav_version"
-
     implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
 }
 java {

@@ -133,7 +133,7 @@ public class Handshaker {
 
             tries++;
             tryBroadcast = tryBroadcast || (tries > 4);
-            if(true || tries > 12){
+            if(tries > 12){
                 throw new HandshakeFailException(
                     "Unable to locate a running server on your network. Check Output Log for troubleshooting steps.\n" +
                             "--- Troubleshooting steps ---\n" +
