@@ -3,12 +3,13 @@ package org.owoTrack;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Build;
+import android.util.Log;
 import android.view.WindowManager;
 
 import androidx.appcompat.app.AlertDialog;
 
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -114,7 +115,13 @@ public class AutoDiscoverer {
                 DatagramPacket packet = new DatagramPacket(handshake.getBytes(), handshake.length(),
                         InetAddress.getByName(mcastAddress), port);
 
-                socket.send(packet);
+                try {
+                    socket.send(packet);
+                }catch(IOException e) {
+                    Log.d("AutoDiscoverer", "Failed to autodiscover: " + e.getMessage() + ", sleeping for timeout instead.");
+                    Thread.sleep(timeout);
+                    return DiscoveryResult.none();
+                }
 
                 socket.setBroadcast(true);
 
