@@ -10,9 +10,8 @@ android {
         applicationId "org.ovrgyrotrackersync"
         minSdkVersion 25
         targetSdkVersion 36
-        versionCode 121
-        versionName "9.9"
-
+        versionCode (rootProject.ext.versionCode + 100)
+        versionName rootProject.ext.versionName
     }
 
     buildTypes {
@@ -31,7 +30,6 @@ android {
 }
 
 dependencies {
-
     implementation 'com.google.android.gms:play-services-wearable:17.0.0'
     implementation 'androidx.percentlayout:percentlayout:1.0.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'

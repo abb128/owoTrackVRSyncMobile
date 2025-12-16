@@ -10,8 +10,8 @@ android {
         applicationId "org.ovrgyrotrackersync"
         minSdkVersion 16
         targetSdkVersion 36
-        versionCode 21
-        versionName "9.9"
+        versionCode rootProject.ext.versionCode
+        versionName rootProject.ext.versionName
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
