@@ -16,6 +16,11 @@ class HandshakeFailException extends Exception {
 }
 
 public class Handshaker {
+    // If active, after 10 tries it will stop sending SlimeVR extensions to maintain compatibility
+    // with really old owoTrack server, but this is somewhat incompatible with SlimeVR's connection
+    // prompt.
+    private static final boolean ALLOW_LEGACY_OWOTRACK = false;
+
     public static class HandshakeResult {
         public boolean success;
 
@@ -111,7 +116,7 @@ public class Handshaker {
             // supported was around 28 bytes. to maintain backwards
             // compatibility the slime extensions are not sent after a
             // certain number of failures
-            boolean sendSlimeExtensions = (tries < 10);
+            boolean sendSlimeExtensions = (!ALLOW_LEGACY_OWOTRACK) && (tries < 10);
             if(sendSlimeExtensions) len += 36 + 9;
 
             ByteBuffer handshake_buff = ByteBuffer.allocate(len);
