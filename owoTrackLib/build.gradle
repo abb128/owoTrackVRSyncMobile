@@ -3,14 +3,12 @@ plugins {
 }
 
 android {
-    compileSdk 33
+    compileSdk 36
     namespace "org.owoTrack"
 
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion 33
-        versionCode 21
-        versionName '9.9'
+        targetSdkVersion 36
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
