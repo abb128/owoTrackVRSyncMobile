@@ -142,7 +142,7 @@ public class ConnectFragment extends GenericBindingFragment {
     private void onConnect(boolean auto){
         if((service_v != null) && (service_v.is_running())){
             onSetStatus("Killing service...");
-            Intent intent = new Intent("kill-ze-service");
+            Intent intent = new Intent(TrackingService.KILL_SERVICE_ACTION);
             getContext().sendBroadcast(intent);
             return;
         }

@@ -28,6 +28,8 @@ import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 public class TrackingService extends Service {
+    public static final String KILL_SERVICE_ACTION = "org.ovrgyrotrackersync.KillTrackingService";
+
     private UDPGyroProviderClient client;
     private GyroListener listener;
     private PowerManager.WakeLock wakeLock;
@@ -258,11 +260,14 @@ public class TrackingService extends Service {
         ContextCompat.registerReceiver(
                 this,
                 broadcastReceiver,
-                new IntentFilter("kill-ze-service"),
-                ContextCompat.RECEIVER_NOT_EXPORTED
+                new IntentFilter(KILL_SERVICE_ACTION),
+
+                // Don't know why this needs to be exported. Doesn't work otherwise
+                // (Android 16)
+                ContextCompat.RECEIVER_EXPORTED
         );
 
-        Intent intent = new Intent("kill-ze-service");
+        Intent intent = new Intent(KILL_SERVICE_ACTION);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
 
         Notification notification = new NotificationCompat.Builder(this, "NOTIFICATION_CHANNEL_ID")
