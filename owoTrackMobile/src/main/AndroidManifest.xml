@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"/>
 
     <application
         android:allowBackup="false"
@@ -29,7 +29,7 @@
             android:name="org.owoTrack.TrackingService"
             android:enabled="true"
             android:stopWithTask="false"
-            android:foregroundServiceType="dataSync">
+            android:foregroundServiceType="connectedDevice">
 
         </service>
     </application>
