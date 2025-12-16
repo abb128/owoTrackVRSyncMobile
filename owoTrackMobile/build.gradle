@@ -49,3 +49,8 @@ dependencies {
 
     implementation project(":owoTrackLib")
 }
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
