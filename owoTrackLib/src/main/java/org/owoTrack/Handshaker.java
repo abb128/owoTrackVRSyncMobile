@@ -106,7 +106,7 @@ public class Handshaker {
     }
 
     public static HandshakeResult try_handshake(DatagramSocket socket, InetAddress ip, int port) throws HandshakeFailException {
-        //if(ip.toString().endsWith(".255")) return true;
+        boolean isBroadcasting = ip.toString().endsWith(".255");
 
         byte[] buffer = new byte[64];
         DatagramPacket handshake_receive = new DatagramPacket(buffer, 64);
@@ -169,43 +169,52 @@ public class Handshaker {
                 }
 
                 try {
-                    socket.setSoTimeout(250);
-                    socket.receive(handshake_receive);
+                    long start = System.currentTimeMillis();
+                    for(;;) {
+                        if(System.currentTimeMillis()-start > 700) break;
 
-                    if (buffer[0] != 3) {
-                        throw new HandshakeFailException("Handshake failed, the server did not respond correctly. Ensure everything is up-to-date and that the port is correct.");
+                        socket.setSoTimeout(250);
+                        socket.receive(handshake_receive);
+
+                        if (buffer[0] != 3) {
+                            if(isBroadcasting || tryBroadcast){
+                                // If we're spamming on a network we may get spam back. Don't complain about that to the user.
+                                continue;
+                            }
+                            throw new HandshakeFailException("Handshake failed, the server did not respond correctly. Ensure everything is up-to-date and that the port is correct.");
+                        }
+
+                        String result = new String(
+                                Arrays.copyOfRange(buffer, 1, 64),
+                                "ASCII");
+
+                        result = result.substring(0, result.indexOf(0));
+
+                        if (!result.startsWith("Hey OVR =D")) {
+                            throw new HandshakeFailException("Handshake failed, the server did not respond correctly in the header. Ensure everything is up-to-date and that the port is correct");
+                        }
+
+                        int version = -1;
+                        try {
+                            version = Integer.parseInt(result.substring(11));
+                        } catch (NumberFormatException e) {
+                            throw new HandshakeFailException("Handshake failed, server did not send an int");
+                        }
+
+                        if (version != UDPGyroProviderClient.CURRENT_VERSION) {
+                            throw new HandshakeFailException("Handshake failed, mismatching version"
+                                    + "\nServer version: " + String.valueOf(version)
+                                    + "\nClient version: " + String.valueOf(UDPGyroProviderClient.CURRENT_VERSION)
+                                    + "\nPlease make sure everything is up to date.");
+                        }
+
+                        boolean had_to_rediscover = (handshake_receive.getAddress() != ip) || (handshake_receive.getPort() != port);
+                        if (tryBroadcast && had_to_rediscover) {
+                            socket.connect(handshake_receive.getAddress(), handshake_receive.getPort());
+                            socket.setBroadcast(false);
+                        }
+                        return HandshakeResult.some(handshake_receive.getAddress(), handshake_receive.getPort(), had_to_rediscover);
                     }
-
-                    String result = new String(
-                            Arrays.copyOfRange(buffer, 1, 64),
-                            "ASCII");
-
-                    result = result.substring(0, result.indexOf(0));
-
-                    if (!result.startsWith("Hey OVR =D")) {
-                        throw new HandshakeFailException("Handshake failed, the server did not respond correctly in the header. Ensure everything is up-to-date and that the port is correct");
-                    }
-
-                    int version = -1;
-                    try{
-                        version = Integer.parseInt(result.substring(11));
-                    }catch(NumberFormatException e){
-                        throw new HandshakeFailException("Handshake failed, server did not send an int");
-                    }
-
-                    if (version != UDPGyroProviderClient.CURRENT_VERSION) {
-                        throw new HandshakeFailException("Handshake failed, mismatching version"
-                            + "\nServer version: " + String.valueOf(version)
-                            + "\nClient version: " + String.valueOf(UDPGyroProviderClient.CURRENT_VERSION)
-                            + "\nPlease make sure everything is up to date.");
-                    }
-
-                    boolean had_to_rediscover = (handshake_receive.getAddress() != ip) || (handshake_receive.getPort() != port);
-                    if(tryBroadcast && had_to_rediscover) {
-                        socket.connect(handshake_receive.getAddress(), handshake_receive.getPort());
-                        socket.setBroadcast(false);
-                    }
-                    return HandshakeResult.some(handshake_receive.getAddress(), handshake_receive.getPort(), had_to_rediscover);
                 } catch (SocketTimeoutException e) {
                     continue;
                 }
