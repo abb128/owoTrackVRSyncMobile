@@ -53,6 +53,12 @@ public class Handshaker {
     // setMac method below, this is not a constant value. It's random per-device
     private static byte[] pseudo_mac = new byte[]{0, 69, 0, 0, 0, 0};
 
+    public static String macAsString() {
+        return String.format("%02X:%02X:%02X:%02X:%02X:%02X",
+                pseudo_mac[0], pseudo_mac[1], pseudo_mac[2],
+                pseudo_mac[3], pseudo_mac[4], pseudo_mac[5]);
+    }
+
     public static void setMac(long from){
         ByteBuffer from_b = ByteBuffer.allocate(Long.BYTES);
         from_b.putLong(from);
@@ -132,13 +138,13 @@ public class Handshaker {
             }
 
             tries++;
-            tryBroadcast = tryBroadcast || (tries > 4);
-            if(tries > 12){
+            tryBroadcast = tryBroadcast || (tries > 10);
+            if(tries > 24){
                 throw new HandshakeFailException(
-                    "Unable to locate a running server on your network. Check Output Log for troubleshooting steps.\n" +
+                    "Unable to locate a running SlimeVR-compatible server on your network. Check Output Log for troubleshooting steps.\n" +
                             "--- Troubleshooting steps ---\n" +
                             "    1. Ensure you've installed SlimeVR Server on your PC and check that it's running\n" +
-                            "    2. Ensure you've accepted the connection request in SlimeVR Server\n" +
+                            "    2. While connecting, check SlimeVR Server for a connection request from the specified MAC, accept it then try connecting again.\n" +
                             "    3. If you're not seeing the request in SlimeVR Server, check the entered IP matches the one in SlimeVR settings, and port is 6969\n" +
                             "    4. If still fails, make sure you're on the same local network (disable any VPNs or mobile data on both ends, use WiFi only)\n" +
                             "    5. If still fails, it may be that your router or firewall is blocking connection to SlimeVR Server (try changing network type to private in Windows)\n" +

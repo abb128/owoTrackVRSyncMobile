@@ -157,7 +157,7 @@ public class UDPGyroProviderClient {
 
     public boolean try_handshake() {
         try {
-            status.update("Attempting to connect to server...");
+            status.update("Scanning network... (MAC: " + Handshaker.macAsString() + ")");
             handshake_result = Handshaker.try_handshake(socket, ip_addr, port_v);
         } catch (HandshakeFailException e) {
             e.printStackTrace();
