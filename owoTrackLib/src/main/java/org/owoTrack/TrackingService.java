@@ -1,5 +1,6 @@
 package org.owoTrack;
 
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -23,6 +24,7 @@ import android.os.VibrationEffect;
 import android.os.Vibrator;
 
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 public class TrackingService extends Service {
@@ -245,6 +247,7 @@ public class TrackingService extends Service {
     }
 
     // stupid foreground stuff
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private void foregroundstuff(){
         NotificationManager nm = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
 
@@ -252,7 +255,12 @@ public class TrackingService extends Service {
             nm.createNotificationChannel(new NotificationChannel("NOTIFICATION_CHANNEL_ID", "Foreground Service", NotificationManager.IMPORTANCE_DEFAULT));
         }
 
-        registerReceiver(broadcastReceiver, new IntentFilter("kill-ze-service"));
+        ContextCompat.registerReceiver(
+                this,
+                broadcastReceiver,
+                new IntentFilter("kill-ze-service"),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+        );
 
         Intent intent = new Intent("kill-ze-service");
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
