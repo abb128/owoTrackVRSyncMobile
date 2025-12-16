@@ -133,8 +133,21 @@ public class Handshaker {
 
             tries++;
             tryBroadcast = tryBroadcast || (tries > 4);
-            if(tries > 12){
-                throw new HandshakeFailException("Connection failed. Ensure IP and port are correct, that the server is running and not blocked by Windows Firewall (try changing your network type to private in Windows) or blocked by router, and that you're connected to the same network (you may need to disable Mobile Data)");
+            if(true || tries > 12){
+                throw new HandshakeFailException(
+                    "Unable to locate a running server on your network. Check Output Log for troubleshooting steps.\n" +
+                            "--- Troubleshooting steps ---\n" +
+                            "    1. Ensure you've installed SlimeVR Server on your PC and check that it's running\n" +
+                            "    2. Ensure you've accepted the connection request in SlimeVR Server\n" +
+                            "    3. If you're not seeing the request in SlimeVR Server, check the entered IP matches the one in SlimeVR settings, and port is 6969\n" +
+                            "    4. If still fails, make sure you're on the same local network (disable any VPNs or mobile data on both ends, use WiFi only)\n" +
+                            "    5. If still fails, it may be that your router or firewall is blocking connection to SlimeVR Server (try changing network type to private in Windows)\n" +
+                            "\n" +
+                            "SlimeVR documentation link: docs.slimevr.dev\n" +
+                            "\n" +
+                            "For K2VR Amethyst or PSMoveServiceEx users: these steps will be different for you, check your documentation\n" +
+                            "--- ---\n\n\n"
+                );
             }
 
             try {

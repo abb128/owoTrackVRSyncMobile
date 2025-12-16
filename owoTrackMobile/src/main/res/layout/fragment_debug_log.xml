@@ -16,6 +16,7 @@
             android:id="@+id/debugText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:typeface="monospace"
             android:text="none" />
 
     </ScrollView>
